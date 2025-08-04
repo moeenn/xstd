@@ -1,0 +1,36 @@
+{
+    "name": "js-std",
+    "version": "0.0.1",
+    "description": "Attempt at create useful functionality, which should have already been in the standard library",
+    "author": "moeenn",
+    "license": "ISC",
+    "keywords": [],
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "start": "tsx ./src/main.ts",
+        "fmt": "npx prettier --write ./src/",
+        "type-check": "npx tsc --noEmit",
+        "lint": "npx eslint --fix ./src/",
+        "check": "npm run type-check && npm run lint",
+        "build": "npx ncc build ./src/main.ts -o ./dist"
+    },
+    "prettier": {
+        "singleQuote": false,
+        "semi": false,
+        "tabWidth": 4,
+        "trailingComma": "all"
+    },
+    "imports": {
+        "#src/*": "./dist/*"
+    },
+    "devDependencies": {
+        "@types/node": "^24.2.0",
+        "@vercel/ncc": "^0.38.3",
+        "eslint": "^9.32.0",
+        "prettier": "^3.6.2",
+        "tsx": "^4.20.3",
+        "typescript": "^5.9.2",
+        "typescript-eslint": "^8.39.0"
+    }
+}
