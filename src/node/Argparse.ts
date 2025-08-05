@@ -1,0 +1,250 @@
+import path from "node:path"
+import { Pair } from "#src/core/Pair.js"
+import { StringBuilder } from "#src/core/StringBuilder.js"
+import { type Option, Options } from "#src/core/Option.js"
+import { Try } from "#src/core/Try.js"
+import { Results, type Result } from "#src/core/Result.js"
+
+type CliOptionKind = "string" | "int" | "float" | "boolean"
+
+export class CliOption {
+    readonly name: string
+    readonly kind: CliOptionKind
+    readonly description: string
+    readonly usage: Option<string>
+
+    constructor(args: {
+        name: string
+        kind: CliOptionKind
+        description: string
+        usage?: string
+    }) {
+        if (args.name.startsWith("-")) {
+            args.name = args.name.slice(1)
+        }
+
+        if (args.name.startsWith("--")) {
+            args.name = args.name.slice(2)
+        }
+
+        this.name = args.name
+        this.kind = args.kind
+        this.description = args.description
+        this.usage = Options.of(args.usage)
+    }
+}
+
+type MapValue = string | number | boolean
+
+export class Argparse {
+    #scriptName: string
+    #argumentOffset: number
+    #map: Record<string, MapValue>
+    #options: CliOption[]
+    #args: string[]
+    #programDescription: Option<string>
+
+    constructor(args: string[], cliOptions: CliOption[], argumentOffset = 2) {
+        this.#programDescription = Options.none()
+        this.#options = [
+            new CliOption({
+                name: "help",
+                kind: "boolean",
+                description: "Print usage details and exit",
+            }),
+            ...cliOptions,
+        ]
+
+        if (args.length < argumentOffset) {
+            throw new Error("invalid arguments provided")
+        }
+
+        this.#scriptName = path.basename(args[argumentOffset - 1])
+        this.#map = {}
+        this.#args = args
+        this.#argumentOffset = argumentOffset
+    }
+
+    setProgramDescription(description: string) {
+        this.#programDescription = Options.some(description)
+    }
+
+    get scriptName(): string {
+        return this.#scriptName
+    }
+
+    parse<T extends Record<string, MapValue> | object>(): Result<T> {
+        const map = this.#parseRawArguments(this.#args)
+        if (!map.isValid) {
+            return map
+        }
+
+        this.#map = map.value
+        if (this.#map["help"]) {
+            this.printHelp()
+            process.exit(1)
+        }
+
+        return Results.ok(this.#map as T)
+    }
+
+    #parseRawArguments(args: string[]): Result<Record<string, MapValue>> {
+        const map: Record<string, MapValue> = {}
+        for (let i = this.#argumentOffset; i < args.length; i++) {
+            const arg = args[i]
+            const parsed = this.#parseSingleArgument(arg)
+            if (!parsed.isValid) {
+                return Results.wrap(parsed, (e) => `invalid argument(s): ${e}`)
+            }
+
+            map[parsed.value.first] = parsed.value.second
+        }
+
+        return Results.ok(map)
+    }
+
+    /**
+     * every argument must be passed in the following formats:
+     * e.g.
+     *  -name=admin
+     *  -verbose (inferred to be boolean)
+     */
+    #parseSingleArgument(arg: string): Result<Pair<string, MapValue>> {
+        if (!arg.startsWith("-")) {
+            throw new Error("invalid argument: " + arg)
+        }
+
+        // parse flags provided without values.
+        if (!arg.includes("=")) {
+            const key = arg.slice(1)
+            const relatedRegisteredOption = Options.of(
+                this.#options.find((opt) => opt.name === key),
+            )
+            if (!relatedRegisteredOption.isPresent) {
+                return Results.err("unknown argument: " + key)
+            }
+
+            if (relatedRegisteredOption.value.kind === "boolean") {
+                return Results.ok(new Pair(key, true))
+            }
+
+            return Results.err("missing argument for -" + key)
+        }
+
+        // parse value flags.
+        const trimmedArg = arg.slice(1)
+        const pieces = trimmedArg.split("=")
+        if (pieces.length !== 2) {
+            return Results.err("invalid argument: " + arg)
+        }
+
+        const [key, value] = pieces
+        const relatedRegisteredOption = Options.of(
+            this.#options.find((opt) => opt.name === key),
+        )
+
+        if (!relatedRegisteredOption.isPresent) {
+            return Results.err("unknown argument: " + key)
+        }
+
+        switch (relatedRegisteredOption.value.kind) {
+            case "boolean":
+                switch (value.toLowerCase()) {
+                    case "true":
+                        return Results.ok(new Pair(key, true))
+
+                    case "false":
+                        return Results.ok(new Pair(key, false))
+
+                    case "":
+                        return Results.err(`missing value for flag -${key}`)
+
+                    default:
+                        return Results.err(
+                            `unexpected value for boolean flag -${key}: ${value}`,
+                        )
+                }
+
+            case "int":
+                switch (value) {
+                    case "":
+                        return Results.err(`missing value for flag -${key}`)
+
+                    default:
+                        const parsedInt = Try(() => parseInt(value))
+                        if (!parsedInt.isValid) {
+                            return Results.err(
+                                `invalid decimal value provided for flag -${key}: ${value}`,
+                            )
+                        }
+                        return Results.ok(new Pair(key, parsedInt.value))
+                }
+
+            case "float":
+                switch (value) {
+                    case "":
+                        return Results.err(`missing value for flag -${key}`)
+
+                    default:
+                        const parsedFloat = Try(() => parseFloat(value))
+                        if (!parsedFloat.isValid) {
+                            return Results.err(
+                                `invalid integer value provided for flag -${key}: ${value}`,
+                            )
+                        }
+                        return Results.ok(new Pair(key, parsedFloat.value))
+                }
+
+            case "string":
+                switch (value) {
+                    case "":
+                        return Results.err(`missing value for flag -${key}`)
+
+                    default:
+                        return Results.ok(new Pair(key, value))
+                }
+        }
+    }
+
+    #getHelp(): string {
+        const builder = new StringBuilder()
+        if (this.#programDescription.isPresent) {
+            builder.append(this.#programDescription.value + "\n")
+        }
+
+        builder.append(`usage: ${this.#scriptName} [argument=value]\n`)
+        const longestArg = this.#options.reduce(
+            (accum, current) =>
+                current.name.length > accum ? current.name.length : accum,
+            0,
+        )
+
+        const paddingLength = 5
+        if (this.#options.length) {
+            builder.append("\noptions:\n")
+            for (const option of this.#options) {
+                const space = " ".repeat(
+                    longestArg + paddingLength - option.name.length - 3,
+                )
+
+                builder.append(
+                    ` -${option.name}: ${space} ${option.description}\n`,
+                )
+
+                if (option.usage.isPresent) {
+                    const fullspace = " ".repeat(longestArg + paddingLength + 2)
+                    builder.append(
+                        fullspace + "Usage: " + option.usage.value + "\n",
+                    )
+                }
+            }
+        }
+
+        return builder.toString()
+    }
+
+    printHelp(): void {
+        const help = this.#getHelp()
+        console.log(help)
+    }
+}

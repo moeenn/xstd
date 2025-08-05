@@ -1,5 +1,7 @@
-function main(): void {}
+class Application {
+    public static main(): void {
+        console.log("hello world")
+    }
+}
 
-main()
-
-// TODO: test executor service.
+Application.main()

@@ -1,3 +1,3 @@
-#### Javascript standard library.
+## Javascript standard library.
 
-Attempt at create useful functionality, which should have already been in the standard library. Primary usage target is NodeJS.
+Attempt at creating useful functionality, which should have already been in the standard library. Primary usage target is NodeJS.
