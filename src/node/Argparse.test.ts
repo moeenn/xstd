@@ -30,7 +30,10 @@ describe("argparse usage tests", () => {
             }),
         ]
 
-        const parser = new Argparse(inputArgs, cliOptions, 2)
+        // ensure all cli options are mandatory.
+        assert(cliOptions.every((opt) => opt.required))
+
+        const parser = new Argparse(inputArgs, cliOptions)
         parser.setProgramDescription("Batch download images from websites.")
 
         const args = parser.parse<CommandLineArgs>()
@@ -55,6 +58,7 @@ describe("argparse usage tests", () => {
             "-force=false",
             "-verbose=true",
         ]
+
         const cliOptions = [
             new CliOption({
                 name: "version",
@@ -81,4 +85,26 @@ describe("argparse usage tests", () => {
         assert.equal(parsedArgs.value.force, false)
         assert(parsedArgs.value.verbose)
     })
+
+    it("optional arguments", () => {
+        type CommandLineArgs = {
+            name?: string
+        }
+
+        const inputArgs = ["node", "/some/test/script.js"]
+        const options = [
+            new CliOption({
+                name: "name",
+                kind: "string",
+                description: "name of the user",
+                required: false,
+            }),
+        ]
+
+        const parser = new Argparse(inputArgs, options)
+        const parsedArgs = parser.parse<CommandLineArgs>()
+        assert.equal(parsedArgs.isValid, true)
+    })
+
+    // TODO: test returned errors.
 })

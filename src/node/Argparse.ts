@@ -12,12 +12,14 @@ export class CliOption {
     readonly kind: CliOptionKind
     readonly description: string
     readonly usage: Option<string>
+    readonly required: boolean = true
 
     constructor(args: {
         name: string
         kind: CliOptionKind
         description: string
         usage?: string
+        required?: boolean
     }) {
         if (args.name.startsWith("-")) {
             args.name = args.name.slice(1)
@@ -31,6 +33,10 @@ export class CliOption {
         this.kind = args.kind
         this.description = args.description
         this.usage = Options.of(args.usage)
+
+        if (args?.required == false) {
+            this.required = false
+        }
     }
 }
 
@@ -51,6 +57,7 @@ export class Argparse {
                 name: "help",
                 kind: "boolean",
                 description: "Print usage details and exit",
+                required: false,
             }),
             ...cliOptions,
         ]
@@ -83,6 +90,15 @@ export class Argparse {
         if (this.#map["help"]) {
             this.printHelp()
             process.exit(1)
+        }
+
+        // ensure all require args have been provded.
+        for (const option of this.#options) {
+            if (option.required) {
+                if (!(option.name in this.#map)) {
+                    return Results.err(`missing required flag: ${option.name}`)
+                }
+            }
         }
 
         return Results.ok(this.#map as T)
