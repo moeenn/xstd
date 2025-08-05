@@ -8,4 +8,8 @@ export class StringBuilder {
     toString(): string {
         return this.#pieces.join("")
     }
+
+    toJSON() {
+        return this.toString()
+    }
 }

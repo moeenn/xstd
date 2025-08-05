@@ -2,11 +2,13 @@ import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { type Option, Options } from "../core/Option.js"
 import type { Future } from "./Future.js"
+import { setTimeout } from "node:timers/promises"
 
-export class ExecutorService<T, E> {
+export class ExecutorService<T> {
     #limit: number
-    #futures: Future<T, E>[]
+    #futures: Future<T>[]
     #emitter: EventEmitter
+    #pollDelay: number = 1_000
     #message = {
         done: "done",
     }
@@ -18,18 +20,41 @@ export class ExecutorService<T, E> {
         this.#emitter = new EventEmitter()
     }
 
-    #getNextFuture(): Option<Future<T, E>> {
+    setPollDelay(delay: number) {
+        assert(delay > 0)
+        this.#pollDelay = delay
+    }
+
+    #getNextFuture(): Option<Future<T>> {
         for (const future of this.#futures) {
-            if (future.isPending()) {
+            if (future.state.status === "pending") {
                 return Options.some(future)
             }
         }
 
-        this.#emitter.emit(this.#message.done)
+        this.#pollCompleteStatus()
         return Options.none()
     }
 
-    submit(future: Future<T, E>): void {
+    async #pollCompleteStatus() {
+        const numInProgress = this.#futures.filter(
+            (ft) => ft.state.status === "inprogress",
+        ).length
+
+        /**
+         *  keep rechecking futures status recursively untill all no more
+         * futures are in progress
+         */
+        if (numInProgress === 0) {
+            this.#emitter.emit(this.#message.done)
+            return
+        }
+
+        await setTimeout(this.#pollDelay)
+        await this.#pollCompleteStatus()
+    }
+
+    submit(future: Future<T>): void {
         future.onComplete(() => {
             const nextFuture = this.#getNextFuture()
             if (nextFuture.isPresent) {
@@ -40,11 +65,22 @@ export class ExecutorService<T, E> {
         this.#futures.push(future)
     }
 
+    collectResults(): T[] {
+        const completedResults = []
+        for (const future of this.#futures) {
+            if (future.state.status === "completed") {
+                completedResults.push(future.state.result)
+            }
+        }
+        return completedResults
+    }
+
     run(): Promise<void> {
         return new Promise((resolve) => {
             this.#emitter.on(this.#message.done, resolve)
 
-            for (let i = 0; i < this.#limit; i++) {
+            const upperLimit = Math.min(this.#futures.length, this.#limit)
+            for (let i = 0; i < upperLimit; i++) {
                 this.#futures[i].run()
             }
         })

@@ -12,6 +12,5 @@
 - [ ] Time
 - [ ] Threads
 - [ ] Int, uint, float types
-- [ ] Csv
-- [ ] Env functions
+- [ ] CSV
 - [ ] Base64 encode / decode

@@ -5,6 +5,7 @@ export default [
     ...tseslint.configs.recommended,
     {
         rules: {
+            "no-throw-literal:": "error",
             "no-warning-comments": [
                 "warn",
                 { terms: ["TODO", "FIXME"], location: "anywhere" },
