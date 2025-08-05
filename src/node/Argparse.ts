@@ -5,39 +5,12 @@ import { type Option, Options } from "#src/core/Option.js"
 import { Try } from "#src/core/Try.js"
 import { Results, type Result } from "#src/core/Result.js"
 
-type CliOptionKind = "string" | "int" | "float" | "boolean"
-
-export class CliOption {
+export type CliOption = {
     readonly name: string
-    readonly kind: CliOptionKind
+    readonly kind: "string" | "int" | "float" | "boolean"
     readonly description: string
-    readonly usage: Option<string>
-    readonly required: boolean = true
-
-    constructor(args: {
-        name: string
-        kind: CliOptionKind
-        description: string
-        usage?: string
-        required?: boolean
-    }) {
-        if (args.name.startsWith("-")) {
-            args.name = args.name.slice(1)
-        }
-
-        if (args.name.startsWith("--")) {
-            args.name = args.name.slice(2)
-        }
-
-        this.name = args.name
-        this.kind = args.kind
-        this.description = args.description
-        this.usage = Options.of(args.usage)
-
-        if (args?.required == false) {
-            this.required = false
-        }
-    }
+    readonly usage?: string
+    readonly optional?: boolean
 }
 
 type MapValue = string | number | boolean
@@ -53,12 +26,12 @@ export class Argparse {
     constructor(args: string[], cliOptions: CliOption[], argumentOffset = 2) {
         this.#programDescription = Options.none()
         this.#options = [
-            new CliOption({
+            {
                 name: "help",
                 kind: "boolean",
                 description: "Print usage details and exit",
-                required: false,
-            }),
+                optional: true,
+            },
             ...cliOptions,
         ]
 
@@ -94,10 +67,9 @@ export class Argparse {
 
         // ensure all require args have been provded.
         for (const option of this.#options) {
-            if (option.required) {
-                if (!(option.name in this.#map)) {
-                    return Results.err(`missing required flag: ${option.name}`)
-                }
+            if (option.optional) continue
+            if (!(option.name in this.#map)) {
+                return Results.err(`missing required flag: ${option.name}`)
             }
         }
 
@@ -247,11 +219,9 @@ export class Argparse {
                     ` -${option.name}: ${space} ${option.description}\n`,
                 )
 
-                if (option.usage.isPresent) {
+                if (option.usage) {
                     const fullspace = " ".repeat(longestArg + paddingLength + 2)
-                    builder.append(
-                        fullspace + "Usage: " + option.usage.value + "\n",
-                    )
+                    builder.append(`${fullspace}Usage: ${option.usage}\n`)
                 }
             }
         }
