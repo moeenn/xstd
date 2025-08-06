@@ -1,12 +1,11 @@
 import { type Result, Results } from "../core/Result.js"
 
-// eslint-disable-next-line no-unused-vars
-type StatusCallback<T> = (future: Future<T>) => void
+type StatusCallback = () => void
 type AsyncCallback<T> = () => Promise<T>
 
 export class Future<T> {
     #callback: AsyncCallback<T>
-    #onCompleteCallbacks: StatusCallback<T>[]
+    #onCompleteCallbacks: StatusCallback[]
     state:
         | { readonly status: "pending" }
         | { readonly status: "inprogress" }
@@ -20,7 +19,7 @@ export class Future<T> {
         return this
     }
 
-    onComplete(callback: StatusCallback<T>) {
+    onComplete(callback: StatusCallback) {
         this.#onCompleteCallbacks.push(callback)
     }
 
@@ -35,7 +34,7 @@ export class Future<T> {
         this.state = { status: "completed", result: result.value }
         if (this.#onCompleteCallbacks.length) {
             for (const cb of this.#onCompleteCallbacks) {
-                cb(this)
+                cb()
             }
         }
 

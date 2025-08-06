@@ -8,8 +8,6 @@
 - [ ] File
 - [ ] Fs
 - [ ] Http status
-- [ ] Console colors
-- [ ] Time
 - [ ] Threads
 - [ ] Int, uint, float types
 - [ ] CSV
@@ -17,5 +15,4 @@
 - [ ] Logger
 - [ ] Dates
 - [ ] Channel
-- [ ] Mutex
 - [ ] Actors

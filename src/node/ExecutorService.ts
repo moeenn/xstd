@@ -2,27 +2,23 @@ import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { type Option, Options } from "../core/Option.js"
 import type { Future } from "./Future.js"
-import { setTimeout } from "node:timers/promises"
 
 export class ExecutorService<T> {
     #limit: number
     #futures: Future<T>[]
     #emitter: EventEmitter
-    #pollDelay: number = 1_000
     #message = {
         done: "done",
     }
 
-    constructor(limit: number) {
-        assert(limit > 0, "executor service limit should be greater than zero")
+    constructor(limit: number = 1) {
+        assert(
+            limit > 0,
+            "executor service limit should be greater than or equal to 1",
+        )
         this.#limit = limit
         this.#futures = []
         this.#emitter = new EventEmitter()
-    }
-
-    setPollDelay(delay: number) {
-        assert(delay > 0)
-        this.#pollDelay = delay
     }
 
     #getNextFuture(): Option<Future<T>> {
@@ -32,11 +28,11 @@ export class ExecutorService<T> {
             }
         }
 
-        this.#pollCompleteStatus()
+        this.#checkDoneStatus()
         return Options.none()
     }
 
-    async #pollCompleteStatus() {
+    async #checkDoneStatus() {
         const numInProgress = this.#futures.filter(
             (ft) => ft.state.status === "inprogress",
         ).length
@@ -50,8 +46,9 @@ export class ExecutorService<T> {
             return
         }
 
-        await setTimeout(this.#pollDelay)
-        await this.#pollCompleteStatus()
+        // TODO: remove after testing.
+        // await setTimeout(this.#pollDelay)
+        // await this.#pollCompleteStatus()
     }
 
     submit(future: Future<T>): void {

@@ -70,17 +70,16 @@ type LogEntry = {
 }
 
 abstract class AbstractLogger {
-    protected writer: Writer
     protected currentLevel: LogLevel
+    protected writer: Writer
 
-    constructor(writer: Writer, level: LogLevel) {
-        this.writer = writer
-        this.currentLevel = level
+    constructor(level?: LogLevel, writer?: Writer) {
+        this.currentLevel = level ?? LogLevel.Info
+        this.writer = writer ?? ConsoleWriter
     }
 
     // eslint-disable-next-line no-unused-vars
     abstract printEntry(logEntry: LogEntry): void
-    abstract defaultLogger(): AbstractLogger
 
     #createLogEntry(
         targetLevel: LogLevel,
@@ -126,17 +125,17 @@ abstract class AbstractLogger {
 }
 
 export class Logger extends AbstractLogger {
-    #defaultLogger?: Logger
+    static #defaultLogger?: Logger
 
-    constructor(writer: Writer, level: LogLevel) {
-        super(writer, level)
+    constructor(level?: LogLevel, writer?: Writer) {
+        super(level, writer)
     }
 
-    defaultLogger(): Logger {
-        if (!this.#defaultLogger) {
-            this.#defaultLogger = new Logger(ConsoleWriter, LogLevel.Info)
+    static DefaultLogger(): Logger {
+        if (!Logger.#defaultLogger) {
+            Logger.#defaultLogger = new Logger(LogLevel.Info, ConsoleWriter)
         }
-        return this.#defaultLogger
+        return Logger.#defaultLogger
     }
 
     printEntry(logEntry: LogEntry): void {
@@ -156,17 +155,20 @@ export class Logger extends AbstractLogger {
 }
 
 export class JsonLogger extends AbstractLogger {
-    #defaultLogger?: Logger
+    static #defaultLogger?: JsonLogger
 
-    constructor(writer: Writer, level: LogLevel) {
-        super(writer, level)
+    constructor(level?: LogLevel, writer?: Writer) {
+        super(level, writer)
     }
 
-    defaultLogger(): Logger {
-        if (!this.#defaultLogger) {
-            this.#defaultLogger = new JsonLogger(ConsoleWriter, LogLevel.Info)
+    static DefaultLogger(): Logger {
+        if (!JsonLogger.#defaultLogger) {
+            JsonLogger.#defaultLogger = new JsonLogger(
+                LogLevel.Info,
+                ConsoleWriter,
+            )
         }
-        return this.#defaultLogger
+        return JsonLogger.#defaultLogger
     }
 
     printEntry(logEntry: LogEntry): void {
