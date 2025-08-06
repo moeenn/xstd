@@ -1,32 +1,19 @@
-import { setTimeout } from "node:timers/promises"
-import { ExecutorService } from "./node/ExecutorService.js"
-import { Future } from "./node/Future.js"
+import { HttpServer } from "./node/HttpServer.js"
 import { JsonLogger } from "./node/Logger.js"
+import { RunCluster } from "./node/Cluster.js"
 
-function getRandomInt(max: number): number {
-    return Math.floor(Math.random() * max)
-}
-
+const logger = new JsonLogger()
 async function main() {
-    const logger = new JsonLogger()
-
-    const executor = new ExecutorService<string>(3)
-    for (let i = 0; i < 10; i++) {
-        const ft = new Future(async (): Promise<string> => {
-            logger.info("running #" + i)
-            await setTimeout(getRandomInt(4_000))
-            return `Result # ${i}`
-        })
-
-        ft.onComplete(() => logger.info("completed #" + i))
-        executor.submit(ft)
+    const server = new HttpServer({ logger })
+    {
+        server.GET("/home", (ctx) => ctx.json(200, { message: "home page" }))
+        server.GET("/about", (ctx) => ctx.json(200, { message: "about page" }))
     }
 
-    await executor.run()
-    const results = executor.collectResults()
-    for (const result of results) {
-        logger.info("result:" + result)
+    const listenResult = server.listen()
+    if (!listenResult.isValid) {
+        logger.error(listenResult.error)
     }
 }
 
-main()
+RunCluster(logger, main)

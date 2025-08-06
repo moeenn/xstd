@@ -69,7 +69,7 @@ type LogEntry = {
     details?: Record<string, unknown>
 }
 
-abstract class AbstractLogger {
+export abstract class AbstractLogger {
     protected currentLevel: LogLevel
     protected writer: Writer
 
@@ -172,12 +172,12 @@ export class JsonLogger extends AbstractLogger {
     }
 
     printEntry(logEntry: LogEntry): void {
-        const encoded = Results.of(() => JSON.stringify(logEntry))
+        const payload = { ...logEntry, ...logEntry.details, details: undefined }
+        const encoded = Results.of(() => JSON.stringify(payload))
         if (!encoded.isValid) {
-            this.error("failed to json encode log entry", {
+            return this.error("failed to json encode log entry", {
                 error: encoded.error,
             })
-            return
         }
         this.writer.write(encoded.value)
     }
