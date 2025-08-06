@@ -1,3 +1,5 @@
+import { Results, type Result } from "./Result.js"
+
 type SomeVariant<T> = { readonly isPresent: true; value: T }
 type NoneVariant = { readonly isPresent: false }
 
@@ -17,8 +19,12 @@ function of<T>(input: T | null | undefined): Option<T> {
     return some(input)
 }
 
+const toResult = <T>(option: SomeVariant<T>): Result<T> =>
+    Results.ok(option.value)
+
 export const Options = {
     some,
     none,
     of,
+    toResult,
 }

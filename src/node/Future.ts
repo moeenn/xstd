@@ -1,4 +1,3 @@
-import { TryAsync } from "../core/Try.js"
 import { type Result, Results } from "../core/Result.js"
 
 type StatusCallback<T> = (future: Future<T>) => void
@@ -26,7 +25,7 @@ export class Future<T> {
 
     async run(): Promise<Result<T>> {
         this.state = { status: "inprogress" }
-        const result = await TryAsync(this.#callback())
+        const result = await Results.ofPromise(this.#callback())
         if (!result.isValid) {
             this.state = { status: "errored", error: result.error }
             return Results.err(result.error)

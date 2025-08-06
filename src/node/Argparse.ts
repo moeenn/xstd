@@ -2,7 +2,6 @@ import path from "node:path"
 import { Pair } from "#src/core/Pair.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
 import { type Option, Options } from "#src/core/Option.js"
-import { Try } from "#src/core/Try.js"
 import { Results, type Result } from "#src/core/Result.js"
 
 export type CliOption = {
@@ -159,7 +158,7 @@ export class Argparse {
                         return Results.err(`missing value for flag -${key}`)
 
                     default:
-                        const parsedInt = Try(() => parseInt(value))
+                        const parsedInt = Results.of(() => parseInt(value))
                         if (!parsedInt.isValid) {
                             return Results.err(
                                 `invalid decimal value provided for flag -${key}: ${value}`,
@@ -174,7 +173,7 @@ export class Argparse {
                         return Results.err(`missing value for flag -${key}`)
 
                     default:
-                        const parsedFloat = Try(() => parseFloat(value))
+                        const parsedFloat = Results.of(() => parseFloat(value))
                         if (!parsedFloat.isValid) {
                             return Results.err(
                                 `invalid integer value provided for flag -${key}: ${value}`,

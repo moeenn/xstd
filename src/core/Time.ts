@@ -1,5 +1,4 @@
 import { Results, type Result } from "./Result.js"
-import { Try } from "./Try.js"
 
 export class Time {
     readonly #hours: number
@@ -23,12 +22,12 @@ export class Time {
             return Results.err(`invalid time: ${input}`)
         }
 
-        const hoursAsNumber = Try(() => parseInt(hours))
+        const hoursAsNumber = Results.of(() => parseInt(hours))
         if (!hoursAsNumber.isValid) {
             return Results.err(`invalid hours value: ${hours}`)
         }
 
-        const minutesAsNumber = Try(() => parseInt(minutes))
+        const minutesAsNumber = Results.of(() => parseInt(minutes))
         if (!minutesAsNumber.isValid) {
             return Results.err(`invalid minutes value: ${minutes}`)
         }
@@ -52,12 +51,12 @@ export class Time {
             return Results.err(`missing hours or minutes`)
         }
 
-        const hoursAsNumber = Try(() => parseInt(hours))
+        const hoursAsNumber = Results.of(() => parseInt(hours))
         if (!hoursAsNumber.isValid) {
             return Results.err(`invalid hours value: ${hours}`)
         }
 
-        const minutesAsNumber = Try(() => parseInt(minutes))
+        const minutesAsNumber = Results.of(() => parseInt(minutes))
         if (!minutesAsNumber.isValid) {
             return Results.err(`invalid minutes value: ${hours}`)
         }

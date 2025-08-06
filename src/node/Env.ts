@@ -1,5 +1,4 @@
 import { Results, type Result } from "#src/core/Result.js"
-import { Try } from "#src/core/Try.js"
 import process from "node:process"
 
 export class Env {
@@ -38,7 +37,7 @@ export class Env {
             return rawValue
         }
 
-        const parsedValue = Try(() => parseFloat(rawValue.value))
+        const parsedValue = Results.of(() => parseFloat(rawValue.value))
         if (!parsedValue.isValid) {
             return Results.err(
                 `environment variable ${name} is not a valid number`,

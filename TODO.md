@@ -1,6 +1,6 @@
 ## TODO
 
-- [ ] Executor service
+- [ ] Executor service (remove polling)
 - [ ] Https request
 - [ ] Http client (safe fetch)
 - [ ] Event emitter (browser)?
@@ -14,3 +14,8 @@
 - [ ] Int, uint, float types
 - [ ] CSV
 - [ ] Base64 encode / decode
+- [ ] Logger
+- [ ] Dates
+- [ ] Channel
+- [ ] Mutex
+- [ ] Actors
