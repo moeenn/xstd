@@ -2,7 +2,7 @@
 // import { ExecutorService } from "./node/ExecutorService.js"
 // import { Future } from "./node/Future.js"
 
-import { Logger, LogLevel } from "./node/Logger.js"
+import { JsonLogger, LogLevel } from "./node/Logger.js"
 import { ConsoleWriter } from "./node/Writer.js"
 
 // function getRandomInt(max: number): number {
@@ -30,7 +30,7 @@ import { ConsoleWriter } from "./node/Writer.js"
 // }
 
 function main() {
-    const logger = new Logger(new ConsoleWriter(), LogLevel.Info, "text")
+    const logger = new JsonLogger(ConsoleWriter, LogLevel.Info)
     logger.info("this is an info message", { port: "4000" })
     logger.warn("this is an info message", { port: "4000" })
     logger.error("this is an info message", { port: "4000" })

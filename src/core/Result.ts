@@ -15,6 +15,7 @@ const err = <T>(error: string): Result<T> => ({
     error: error,
 })
 
+// eslint-disable-next-line no-unused-vars
 function wrap(result: ErrVariant, fn: (e: string) => string): ErrVariant {
     result.error = fn(result.error)
     return result
@@ -42,6 +43,8 @@ function of<T>(fn: () => T): Result<T> {
         if (ex instanceof Error) {
             return Results.err(ex.message)
         }
+
+        // eslint-disable-next-line no-console
         console.error(ex)
         return Results.err("unknown error occurred")
     }
@@ -58,6 +61,8 @@ async function ofPromise<T>(promise: Promise<T>): Promise<Result<T>> {
         if (ex instanceof Error) {
             return Results.err(ex.message)
         }
+
+        // eslint-disable-next-line no-console
         console.error(ex)
         return Results.err("unknown error occurred")
     }

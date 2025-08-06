@@ -1,11 +1,13 @@
 export interface Writer {
+    // eslint-disable-next-line no-unused-vars
     write(data: string): void
 }
 
-export class ConsoleWriter implements Writer {
+export const ConsoleWriter: Writer = {
     write(data: string) {
-        process.stdout.write(data + "\n")
-    }
-}
+        // eslint-disable-next-line no-console
+        console.log(data)
+    },
+} as const
 
 // TODO: implement file writer class.

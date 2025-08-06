@@ -1,5 +1,6 @@
 export type DatePlaceholder = {
     placeholders: string[]
+    // eslint-disable-next-line no-unused-vars
     format(date: Date): string
 }
 

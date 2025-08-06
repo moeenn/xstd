@@ -1,10 +1,9 @@
 import { DateTimeFormatter, Format } from "#src/core/DateTimeFormatter.js"
-import type { Either } from "#src/core/Either.js"
 import { Options } from "#src/core/Option.js"
 import { Results, type Result } from "#src/core/Result.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
 import { Env } from "./Env.js"
-import type { Writer } from "./Writer.js"
+import { ConsoleWriter, type Writer } from "./Writer.js"
 
 export class LogLevel {
     readonly level: number
@@ -63,7 +62,6 @@ export class LogLevel {
     }
 }
 
-type LoggerOutput = Either<"text", "json">
 type LogEntry = {
     timestamp: string
     level: string
@@ -71,29 +69,77 @@ type LogEntry = {
     details?: Record<string, unknown>
 }
 
-export class Logger {
-    #writer: Writer
-    #currentLevel: LogLevel
-    #output: LoggerOutput
+abstract class AbstractLogger {
+    protected writer: Writer
+    protected currentLevel: LogLevel
 
-    constructor(writer: Writer, level: LogLevel, output: LoggerOutput) {
-        this.#writer = writer
-        this.#currentLevel = level
-        this.#output = output
+    constructor(writer: Writer, level: LogLevel) {
+        this.writer = writer
+        this.currentLevel = level
     }
 
-    #logJson(logEntry: LogEntry): void {
-        const encoded = Results.of(() => JSON.stringify(logEntry))
-        if (!encoded.isValid) {
-            this.error("failed to json encode log entry", {
-                error: encoded.error,
-            })
-            return
+    // eslint-disable-next-line no-unused-vars
+    abstract printEntry(logEntry: LogEntry): void
+    abstract defaultLogger(): AbstractLogger
+
+    #createLogEntry(
+        targetLevel: LogLevel,
+        message: string,
+        details?: Record<string, unknown>,
+    ): Result<LogEntry> {
+        const timestamp = DateTimeFormatter.format(new Date(), Format.full)
+        if (!timestamp.isValid) {
+            return Results.err(`failed to get timestamp: ` + timestamp.error)
         }
-        this.#writer.write(encoded.value)
+
+        const logEntry: LogEntry = {
+            timestamp: timestamp.value,
+            level: targetLevel.value,
+            message,
+            details,
+        }
+
+        return Results.ok(logEntry)
     }
 
-    #logText(logEntry: LogEntry): void {
+    #log(targetLevel: LogLevel) {
+        return (message: string, details?: Record<string, unknown>): void => {
+            if (targetLevel.level >= this.currentLevel.level) {
+                const logEntry = this.#createLogEntry(
+                    targetLevel,
+                    message,
+                    details,
+                )
+                if (!logEntry.isValid) {
+                    this.error(logEntry.error)
+                    return
+                }
+
+                this.printEntry(logEntry.value)
+            }
+        }
+    }
+
+    info = this.#log(LogLevel.Info)
+    warn = this.#log(LogLevel.Warn)
+    error = this.#log(LogLevel.Error)
+}
+
+export class Logger extends AbstractLogger {
+    #defaultLogger?: Logger
+
+    constructor(writer: Writer, level: LogLevel) {
+        super(writer, level)
+    }
+
+    defaultLogger(): Logger {
+        if (!this.#defaultLogger) {
+            this.#defaultLogger = new Logger(ConsoleWriter, LogLevel.Info)
+        }
+        return this.#defaultLogger
+    }
+
+    printEntry(logEntry: LogEntry): void {
         const builder = new StringBuilder()
         builder.append(
             `${logEntry.timestamp} - ${logEntry.level} - ${logEntry.message}`,
@@ -105,43 +151,32 @@ export class Logger {
             }
         }
 
-        this.#writer.write(builder.toString())
+        this.writer.write(builder.toString())
+    }
+}
+
+export class JsonLogger extends AbstractLogger {
+    #defaultLogger?: Logger
+
+    constructor(writer: Writer, level: LogLevel) {
+        super(writer, level)
     }
 
-    #log(targetLevel: LogLevel) {
-        return (message: string, details?: Record<string, unknown>): void => {
-            if (targetLevel.level >= this.#currentLevel.level) {
-                const timestamp = DateTimeFormatter.format(
-                    new Date(),
-                    Format.full,
-                )
-
-                if (!timestamp.isValid) {
-                    this.error("failed to get timestamp", {
-                        error: timestamp.error,
-                    })
-                    return
-                }
-
-                const logEntry: LogEntry = {
-                    timestamp: timestamp.value,
-                    level: targetLevel.value,
-                    message,
-                    details,
-                }
-
-                switch (this.#output) {
-                    case "text":
-                        return this.#logText(logEntry)
-
-                    case "json":
-                        return this.#logJson(logEntry)
-                }
-            }
+    defaultLogger(): Logger {
+        if (!this.#defaultLogger) {
+            this.#defaultLogger = new JsonLogger(ConsoleWriter, LogLevel.Info)
         }
+        return this.#defaultLogger
     }
 
-    info = this.#log(LogLevel.Info)
-    warn = this.#log(LogLevel.Warn)
-    error = this.#log(LogLevel.Error)
+    printEntry(logEntry: LogEntry): void {
+        const encoded = Results.of(() => JSON.stringify(logEntry))
+        if (!encoded.isValid) {
+            this.error("failed to json encode log entry", {
+                error: encoded.error,
+            })
+            return
+        }
+        this.writer.write(encoded.value)
+    }
 }

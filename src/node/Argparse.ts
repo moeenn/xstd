@@ -1,4 +1,5 @@
 import path from "node:path"
+import process from "node:process"
 import { Pair } from "#src/core/Pair.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
 import { type Option, Options } from "#src/core/Option.js"
@@ -230,6 +231,6 @@ export class Argparse {
 
     printHelp(): void {
         const help = this.#getHelp()
-        console.log(help)
+        process.stdout.write(help)
     }
 }

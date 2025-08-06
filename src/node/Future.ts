@@ -1,5 +1,6 @@
 import { type Result, Results } from "../core/Result.js"
 
+// eslint-disable-next-line no-unused-vars
 type StatusCallback<T> = (future: Future<T>) => void
 type AsyncCallback<T> = () => Promise<T>
 
