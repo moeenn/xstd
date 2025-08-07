@@ -5,12 +5,12 @@ type ErrVariant = { readonly isValid: false; error: string }
 
 export type Result<T> = OkVariant<T> | ErrVariant
 
-const ok = <T>(value: T): Result<T> => ({
+const ok = <T,>(value: T): Result<T> => ({
     isValid: true,
     value: value,
 })
 
-const err = <T>(error: string): Result<T> => ({
+const err = <T,>(error: string): Result<T> => ({
     isValid: false,
     error: error,
 })
@@ -21,7 +21,7 @@ function wrap(result: ErrVariant, fn: (e: string) => string): ErrVariant {
     return result
 }
 
-function unwrap(result: ErrVariant): never {
+function panic(result: ErrVariant): never {
     throw result.error
 }
 
@@ -72,7 +72,7 @@ export const Results = {
     ok,
     err,
     wrap,
-    unwrap,
+    panic,
     toOption,
     of,
     ofPromise,

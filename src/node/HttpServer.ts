@@ -10,7 +10,7 @@ export type HttpServerConfig = {
     logger: AbstractLogger
 }
 
-type HttpRequestMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS"
+export type HttpRequestMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS"
 
 class Context {
     req: IncomingMessage

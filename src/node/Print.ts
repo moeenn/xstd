@@ -1,4 +1,4 @@
-interface Stringable {
+export interface Stringable {
     toString(): string
 }
 
