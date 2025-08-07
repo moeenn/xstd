@@ -1,6 +1,6 @@
 import http from "node:http"
 import type { IncomingMessage, Server, ServerResponse } from "node:http"
-import { Results, type Result } from "#src/core/Result.js"
+import { Results, type NilResult, type Result } from "#src/core/Result.js"
 import { JsonLogger, type AbstractLogger } from "./Logger.js"
 import { Options } from "#src/core/Option.js"
 
@@ -51,7 +51,7 @@ class Context {
         return Results.ok(input as HttpRequestMethod)
     }
 
-    json(status: number, data: object): Result<null> {
+    json(status: number, data: object): NilResult {
         const encoded = Results.of(() => JSON.stringify(data))
         if (!encoded.isValid) {
             return encoded
@@ -62,12 +62,12 @@ class Context {
             .writeHead(status)
             .end(encoded.value)
 
-        return Results.ok(null)
+        return Results.nil()
     }
 }
 
 // eslint-disable-next-line no-unused-vars
-type RequestHandler = (ctx: Context) => Result<null>
+type RequestHandler = (ctx: Context) => NilResult
 
 export class HttpServer {
     #host: string
@@ -134,7 +134,7 @@ export class HttpServer {
         }
     }
 
-    listen(): Result<null> {
+    listen(): NilResult {
         const output = Results.of(() =>
             this.#server.listen(this.#port, this.#host, () =>
                 this.#logger.info("starting server", {
@@ -147,6 +147,6 @@ export class HttpServer {
             return Results.err(`failed to start server: ` + output.error)
         }
 
-        return Results.ok(null)
+        return Results.nil()
     }
 }

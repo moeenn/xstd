@@ -2,8 +2,8 @@ import { Options, type Option } from "./Option.js"
 
 type OkVariant<T> = { readonly isValid: true; value: T }
 type ErrVariant = { readonly isValid: false; error: string }
-
 export type Result<T> = OkVariant<T> | ErrVariant
+export type NilResult = Result<null>
 
 const ok = <T,>(value: T): Result<T> => ({
     isValid: true,
@@ -21,8 +21,8 @@ function wrap(result: ErrVariant, fn: (e: string) => string): ErrVariant {
     return result
 }
 
-function panic(result: ErrVariant): never {
-    throw result.error
+function nil(): NilResult {
+    return Results.ok(null)
 }
 
 function toOption<T>(result: Result<T>): Option<T> {
@@ -72,7 +72,7 @@ export const Results = {
     ok,
     err,
     wrap,
-    panic,
+    nil,
     toOption,
     of,
     ofPromise,

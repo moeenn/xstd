@@ -1,7 +1,11 @@
 import fs from "node:fs/promises"
-import { Results, type Result } from "#src/core/Result.js"
+import fsSync from "node:fs"
+import { Results, type NilResult, type Result } from "#src/core/Result.js"
 import { Filesystem } from "./Filesystem.js"
 import { Type, Types } from "../core/Types.js"
+import { type ReadableStream } from "node:stream/web"
+import { Readable } from "node:stream"
+import { finished } from "node:stream/promises"
 
 export class File {
     #path: string
@@ -29,7 +33,7 @@ export class File {
         return Results.ok(file)
     }
 
-    async write(content: string | Buffer | Blob): Promise<Result<null>> {
+    async write(content: string | Buffer | Blob): Promise<NilResult> {
         if (!this.#pathChecked) {
             const exists = await Filesystem.exists(this.#path)
             if (!exists) {
@@ -106,6 +110,45 @@ export class File {
             )
         }
 
-        return Results.ok(null)
+        return Results.nil()
+    }
+
+    /**
+     * Write file to disk using web Readable stream.
+     *
+     * @param {ReadableStream} inputStream - Type imported from "node:stream/web"
+     */
+    async writeFromStream(inputStream: ReadableStream): Promise<NilResult> {
+        const writeStream = Results.of(() =>
+            fsSync.createWriteStream(this.#path),
+        )
+        if (!writeStream.isValid) {
+            return Results.wrap(
+                writeStream,
+                (err) => "failed to create write stream: " + err,
+            )
+        }
+
+        const outputStream = Results.of(() =>
+            Readable.fromWeb(inputStream).pipe(writeStream.value),
+        )
+        if (!outputStream.isValid) {
+            return Results.wrap(
+                outputStream,
+                (err) => "failed to create output stream: " + err,
+            )
+        }
+
+        const finalResult = await Results.ofPromise(
+            finished(outputStream.value),
+        )
+        if (!finalResult.isValid) {
+            return Results.wrap(
+                finalResult,
+                (err) => "stream completion failed: " + err,
+            )
+        }
+
+        return Results.nil()
     }
 }

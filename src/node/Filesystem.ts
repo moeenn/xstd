@@ -1,6 +1,5 @@
 import fs from "node:fs/promises"
-import { Results, type Result } from "#src/core/Result.js"
-import { File } from "./File.js"
+import { Results, type NilResult, type Result } from "#src/core/Result.js"
 
 async function exists(path: string): Promise<boolean> {
     const output = await Results.ofPromise(fs.access(path, fs.constants.F_OK))
@@ -67,7 +66,7 @@ async function isLink(path: string): Promise<Result<boolean>> {
     return Results.ok(isLink.value)
 }
 
-async function touch(path: string): Promise<Result<null>> {
+async function touch(path: string): Promise<NilResult> {
     const handle = await Results.ofPromise(fs.open(path, "w"))
     if (!handle.isValid) {
         return Results.wrap(handle, (err) => "failed to create file: " + err)
@@ -81,7 +80,7 @@ async function touch(path: string): Promise<Result<null>> {
         )
     }
 
-    return Results.ok(null)
+    return Results.nil()
 }
 
 export const Filesystem = {

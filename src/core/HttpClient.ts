@@ -79,7 +79,6 @@ export const HttpResponseType = {
     Text: "Text",
     Json: "Json",
     Blob: "Blob",
-    Stream: "Stream",
 } as const
 
 export class HttpClient {
@@ -131,12 +130,6 @@ export class HttpClient {
             case HttpResponseType.Blob:
                 return Results.ofPromise(res.value.blob())
 
-            case HttpResponseType.Stream:
-                if (res.value.body) {
-                    return Results.ok(res.value.body)
-                }
-                return Results.err("empty response stream")
-
             case HttpResponseType.Json:
                 const responseJson = await Results.ofPromise(res.value.json())
                 if (!responseJson.isValid) {
@@ -148,5 +141,45 @@ export class HttpClient {
 
                 return Results.ok(responseJson.value)
         }
+    }
+
+    // TODO: make DRY.
+    async stream(request: HttpRequest): Promise<Result<ReadableStream<Any>>> {
+        let body: Option<string | FormData> = Options.none()
+        if (request.body.isPresent) {
+            const rawBody = request.body.value
+            if (rawBody instanceof FormData) {
+                body = Options.some(rawBody)
+            } else {
+                const encoded = Results.of(() => JSON.stringify(rawBody))
+                if (!encoded.isValid) {
+                    return Results.wrap(
+                        encoded,
+                        (err) => `failed to json encode request body: ${err}`,
+                    )
+                }
+
+                body = Options.some(encoded.value)
+            }
+        }
+
+        const res = await Results.ofPromise(
+            fetch(request.url, {
+                method: request.method,
+                headers: request.headers,
+                signal: AbortSignal.timeout(request.timeout),
+                body: Options.orElse(body, undefined),
+            }),
+        )
+
+        if (!res.isValid) {
+            return Results.wrap(res, (err) => "request failed: " + err)
+        }
+
+        if (!res.value.body) {
+            return Results.err("empty response stream")
+        }
+
+        return Results.ok(res.value.body)
     }
 }

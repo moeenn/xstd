@@ -34,6 +34,7 @@ export type Any = {
     }
 }
 
+// TODO: add assertion to return type to allow type narrowing at call site.
 function isType(input: Any, targetType: KnownType): boolean {
     const typeName = input.constructor.name
     switch (typeName) {
