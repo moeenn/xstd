@@ -3,14 +3,18 @@ import os from "node:os"
 import type { AbstractLogger } from "./Logger.js"
 import { Results } from "#src/core/Result.js"
 
-export function RunCluster(
+export type ClusterWorkerCount = number | "MAX"
+
+export function startCluster(
     logger: AbstractLogger,
     entrypoint: () => Promise<void>,
+    workers: ClusterWorkerCount,
 ) {
     const numCPUs = os.cpus().length
     if (cluster.isPrimary) {
+        const numWorkers = workers === "MAX" ? numCPUs : workers
         logger.info("starting cluster", { masterPID: process.pid })
-        for (let i = 0; i < numCPUs; i++) {
+        for (let i = 0; i < numWorkers; i++) {
             cluster.fork()
         }
 

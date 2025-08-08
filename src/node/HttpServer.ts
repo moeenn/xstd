@@ -1,8 +1,10 @@
 import http from "node:http"
+import path from "node:path"
 import type { IncomingMessage, Server, ServerResponse } from "node:http"
 import { Results, type NilResult, type Result } from "#src/core/Result.js"
 import { JsonLogger, type AbstractLogger } from "./Logger.js"
 import { Options } from "#src/core/Option.js"
+import { startCluster, type ClusterWorkerCount } from "./Cluster.js"
 
 export type HttpServerConfig = {
     host: string
@@ -18,7 +20,7 @@ export type HttpRequestMethod =
     | "DELETE"
     | "OPTIONS"
 
-class Context {
+export class Context {
     req: IncomingMessage
     res: ServerResponse
     readonly url: string
@@ -72,6 +74,50 @@ class Context {
     }
 }
 
+type ControllerRequestHandler = {
+    method: HttpRequestMethod
+    path: string
+    handler: RequestHandler
+}
+
+export abstract class Controller {
+    #registeredRequestHandlers: ControllerRequestHandler[] = []
+
+    constructor() {
+        this.#registeredRequestHandlers = []
+        this.routes()
+    }
+
+    abstract readonly prefix: string
+    abstract routes(): void
+
+    route(
+        method: HttpRequestMethod,
+        pathValue: string,
+        handler: RequestHandler,
+    ) {
+        this.#registeredRequestHandlers.push({
+            method,
+            path: pathValue,
+            handler,
+        })
+    }
+
+    getRegisteredRoutes(): ControllerRequestHandler[] {
+        return this.#registeredRequestHandlers
+    }
+}
+
+export class HttpError {
+    readonly statusCode: number
+    error: string
+
+    constructor(statusCode: number, error: string) {
+        this.statusCode = statusCode
+        this.error = error
+    }
+}
+
 // eslint-disable-next-line no-unused-vars
 type RequestHandler = (ctx: Context) => NilResult
 
@@ -90,13 +136,16 @@ export class HttpServer {
         this.#requestHandlers = new Map()
     }
 
-    GET(path: string, handler: RequestHandler) {
-        const key = "GET " + path
-        if (this.#requestHandlers.has(key)) {
-            throw new Error(`path '${key}' has been registered multiple times`)
-        }
+    #reportError = (ctx: Context, error: HttpError): void => {
+        const payload = { statusCode: error.statusCode, error: error.error }
+        const responseOutput = ctx.json(error.statusCode, payload)
+        if (responseOutput.isValid) return
 
-        this.#requestHandlers.set(key, handler)
+        const rawJsonResponse = `{ "statusCode": ${error.statusCode}, "error": "${error.error}"`
+        ctx.res
+            .setHeader("Content-Type", "application/json")
+            .writeHead(error.statusCode)
+            .end(rawJsonResponse)
     }
 
     #coreRouter = (req: IncomingMessage, res: ServerResponse): void => {
@@ -113,15 +162,14 @@ export class HttpServer {
         const { url, method } = ctxResult.value
         this.#logger.info("incoming request", { method, url })
 
-        const key = `${method} ${url}`
+        const key = `${method} ${url}`.trim()
         const foundRequestHandler = Options.of(this.#requestHandlers.get(key))
         if (!foundRequestHandler.isPresent) {
             this.#logger.warn("not found", { url, method })
-            res.setHeader("Content-Type", "application/json")
-                .writeHead(404)
-                .end(`{"error":"not found"}`)
-
-            return
+            return this.#reportError(
+                ctxResult.value,
+                new HttpError(404, "not found"),
+            )
         }
 
         const actionResult = foundRequestHandler.value(ctxResult.value)
@@ -132,15 +180,29 @@ export class HttpServer {
                 error: actionResult.error,
             })
 
-            res.setHeader("Content-Type", "application/json")
-                .writeHead(500)
-                .end(`{"error":"something went wrong"}`)
-
-            return
+            return this.#reportError(
+                ctxResult.value,
+                new HttpError(500, "something went wrong"),
+            )
         }
     }
 
-    listen(): NilResult {
+    addController(controller: Controller) {
+        const registeredRoutes = controller.getRegisteredRoutes()
+        for (const route of registeredRoutes) {
+            const key = `${route.method} ${path.join(controller.prefix, route.path)}`
+            if (this.#requestHandlers.has(key)) {
+                throw new Error(
+                    `path ${key} has been registered multiple times`,
+                )
+            }
+
+            this.#logger.info("registered route", { key })
+            this.#requestHandlers.set(key, route.handler)
+        }
+    }
+
+    run(): NilResult {
         const output = Results.of(() =>
             this.#server.listen(this.#port, this.#host, () =>
                 this.#logger.info("starting server", {
@@ -154,5 +216,18 @@ export class HttpServer {
         }
 
         return Results.nil()
+    }
+
+    runCluster(options: { workers: ClusterWorkerCount }): void {
+        const logger = this.#logger
+        const entrypoint = async () => {
+            const runResult = this.run()
+            if (!runResult.isValid) {
+                this.#logger.error("failed to start worker", {
+                    error: runResult.error,
+                })
+            }
+        }
+        startCluster(logger, entrypoint, options.workers)
     }
 }

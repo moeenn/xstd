@@ -15,22 +15,15 @@ const err = <T,>(error: string): Result<T> => ({
     error: error,
 })
 
-// eslint-disable-next-line no-unused-vars
 function wrap(result: ErrVariant, prefix: string): ErrVariant {
     result.error = prefix + ": " + result.error
     return result
 }
 
-function nil(): NilResult {
-    return ok(null)
-}
+const nil = (): NilResult => ok(null)
 
-function toOption<T>(result: Result<T>): Option<T> {
-    if (result.isValid) {
-        return Options.some(result.value)
-    }
-    return Options.none()
-}
+const toOption = <T,>(result: Result<T>): Option<T> =>
+    result.isValid ? Options.some(result.value) : Options.none()
 
 function of<T>(fn: () => T): Result<T> {
     try {
