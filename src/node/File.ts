@@ -39,10 +39,7 @@ export class File {
             if (!exists) {
                 const createResult = await Filesystem.touch(this.#path)
                 if (!createResult.isValid) {
-                    return Results.wrap(
-                        createResult,
-                        (err) => "failed to create file: " + err,
-                    )
+                    return Results.wrap(createResult, "failed to create file")
                 }
             } else {
                 const isFile = await Filesystem.isFile(this.#path)
@@ -56,10 +53,7 @@ export class File {
 
         const contentType = Types.getType(content)
         if (!contentType.isValid) {
-            return Results.wrap(
-                contentType,
-                (err) => "failed to detect content type: " + err,
-            )
+            return Results.wrap(contentType, "failed to detect content type")
         }
 
         let buffer: Buffer
@@ -79,7 +73,7 @@ export class File {
                 if (!conversionResult.isValid) {
                     return Results.wrap(
                         conversionResult,
-                        (err) => "failed to convert blob to buffer: " + err,
+                        "failed to convert blob to buffer",
                     )
                 }
 
@@ -89,7 +83,7 @@ export class File {
                 if (!bufferResult.isValid) {
                     return Results.wrap(
                         bufferResult,
-                        (err) => "failed to instantiate buffer: " + err,
+                        "failed to instantiate buffer",
                     )
                 }
                 buffer = bufferResult.value
@@ -104,10 +98,7 @@ export class File {
         )
 
         if (!writeResult.isValid) {
-            return Results.wrap(
-                writeResult,
-                (err) => "failed to write content: " + err,
-            )
+            return Results.wrap(writeResult, "failed to write content")
         }
 
         return Results.nil()
@@ -123,30 +114,21 @@ export class File {
             fsSync.createWriteStream(this.#path),
         )
         if (!writeStream.isValid) {
-            return Results.wrap(
-                writeStream,
-                (err) => "failed to create write stream: " + err,
-            )
+            return Results.wrap(writeStream, "failed to create write stream")
         }
 
         const outputStream = Results.of(() =>
             Readable.fromWeb(inputStream).pipe(writeStream.value),
         )
         if (!outputStream.isValid) {
-            return Results.wrap(
-                outputStream,
-                (err) => "failed to create output stream: " + err,
-            )
+            return Results.wrap(outputStream, "failed to create output stream")
         }
 
         const finalResult = await Results.ofPromise(
             finished(outputStream.value),
         )
         if (!finalResult.isValid) {
-            return Results.wrap(
-                finalResult,
-                (err) => "stream completion failed: " + err,
-            )
+            return Results.wrap(finalResult, "stream completion failed")
         }
 
         return Results.nil()

@@ -82,7 +82,7 @@ export class Argparse {
             const arg = args[i]
             const parsed = this.#parseSingleArgument(arg)
             if (!parsed.isValid) {
-                return Results.wrap(parsed, (e) => `invalid argument(s): ${e}`)
+                return Results.wrap(parsed, "invalid argument(s)")
             }
 
             map[parsed.value.first] = parsed.value.second

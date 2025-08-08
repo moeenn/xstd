@@ -102,7 +102,7 @@ export class HttpClient {
                 if (!encoded.isValid) {
                     return Results.wrap(
                         encoded,
-                        (err) => `failed to json encode request body: ${err}`,
+                        "failed to json encode request body",
                     )
                 }
 
@@ -135,7 +135,7 @@ export class HttpClient {
                 if (!responseJson.isValid) {
                     return Results.wrap(
                         responseJson,
-                        (err) => `failed to parse response as json: ${err}`,
+                        "failed to parse response as json",
                     )
                 }
 
@@ -155,7 +155,7 @@ export class HttpClient {
                 if (!encoded.isValid) {
                     return Results.wrap(
                         encoded,
-                        (err) => `failed to json encode request body: ${err}`,
+                        "failed to json encode request body",
                     )
                 }
 
@@ -173,7 +173,7 @@ export class HttpClient {
         )
 
         if (!res.isValid) {
-            return Results.wrap(res, (err) => "request failed: " + err)
+            return Results.wrap(res, "request failed")
         }
 
         if (!res.value.body) {

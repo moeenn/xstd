@@ -9,18 +9,12 @@ async function exists(path: string): Promise<boolean> {
 async function isDirectory(path: string): Promise<Result<boolean>> {
     const output = await Results.ofPromise(fs.lstat(path))
     if (!output.isValid) {
-        return Results.wrap(
-            output,
-            (err) => "failed to get details of path: " + err,
-        )
+        return Results.wrap(output, "failed to get details of path")
     }
 
     const isDir = Results.of(() => output.value.isDirectory())
     if (!isDir.isValid) {
-        return Results.wrap(
-            isDir,
-            (err) => "failed to check if path is a directory: " + err,
-        )
+        return Results.wrap(isDir, "failed to check if path is a directory")
     }
 
     return Results.ok(isDir.value)
@@ -29,18 +23,12 @@ async function isDirectory(path: string): Promise<Result<boolean>> {
 async function isFile(path: string): Promise<Result<boolean>> {
     const output = await Results.ofPromise(fs.lstat(path))
     if (!output.isValid) {
-        return Results.wrap(
-            output,
-            (err) => "failed to get details of path: " + err,
-        )
+        return Results.wrap(output, "failed to get details of path")
     }
 
     const isFile = Results.of(() => output.value.isFile())
     if (!isFile.isValid) {
-        return Results.wrap(
-            isFile,
-            (err) => "failed to check if path is a file: " + err,
-        )
+        return Results.wrap(isFile, "failed to check if path is a file")
     }
 
     return Results.ok(isFile.value)
@@ -49,17 +37,14 @@ async function isFile(path: string): Promise<Result<boolean>> {
 async function isLink(path: string): Promise<Result<boolean>> {
     const output = await Results.ofPromise(fs.lstat(path))
     if (!output.isValid) {
-        return Results.wrap(
-            output,
-            (err) => "failed to get details of path: " + err,
-        )
+        return Results.wrap(output, "failed to get details of path")
     }
 
     const isLink = Results.of(() => output.value.isSymbolicLink())
     if (!isLink.isValid) {
         return Results.wrap(
             isLink,
-            (err) => "failed to check if path is a symbolic link: " + err,
+            "failed to check if path is a symbolic link",
         )
     }
 
@@ -69,15 +54,12 @@ async function isLink(path: string): Promise<Result<boolean>> {
 async function touch(path: string): Promise<NilResult> {
     const handle = await Results.ofPromise(fs.open(path, "w"))
     if (!handle.isValid) {
-        return Results.wrap(handle, (err) => "failed to create file: " + err)
+        return Results.wrap(handle, "failed to create file")
     }
 
     const closeResult = await Results.ofPromise(handle.value.close())
     if (!closeResult) {
-        return Results.wrap(
-            closeResult,
-            (err) => "failed to close create file: " + err,
-        )
+        return Results.wrap(closeResult, "failed to close create file")
     }
 
     return Results.nil()
