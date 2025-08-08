@@ -5,12 +5,12 @@ type ErrVariant = { readonly isValid: false; error: string }
 export type Result<T> = OkVariant<T> | ErrVariant
 export type NilResult = Result<null>
 
-const ok = <T>(value: T): Result<T> => ({
+const ok = <T,>(value: T): Result<T> => ({
     isValid: true,
     value: value,
 })
 
-const err = <T>(error: string): Result<T> => ({
+const err = <T,>(error: string): Result<T> => ({
     isValid: false,
     error: error,
 })
@@ -22,7 +22,7 @@ function wrap(result: ErrVariant, prefix: string): ErrVariant {
 }
 
 function nil(): NilResult {
-    return Results.ok(null)
+    return ok(null)
 }
 
 function toOption<T>(result: Result<T>): Option<T> {
@@ -36,17 +36,17 @@ function of<T>(fn: () => T): Result<T> {
     try {
         const result = fn()
         if (typeof result === "number" && isNaN(result)) {
-            return Results.err("invalid number")
+            return err("invalid number")
         }
-        return Results.ok(result)
+        return ok(result)
     } catch (ex) {
         if (ex instanceof Error) {
-            return Results.err(ex.message)
+            return err(ex.message)
         }
 
         // eslint-disable-next-line no-console
         console.error(ex)
-        return Results.err("unknown error occurred")
+        return err("unknown error occurred")
     }
 }
 
@@ -54,17 +54,17 @@ async function ofPromise<T>(promise: Promise<T>): Promise<Result<T>> {
     try {
         const result = await promise
         if (typeof result === "number" && isNaN(result)) {
-            return Results.err("invalid number")
+            return err("invalid number")
         }
-        return Results.ok(result)
+        return ok(result)
     } catch (ex) {
         if (ex instanceof Error) {
-            return Results.err(ex.message)
+            return err(ex.message)
         }
 
         // eslint-disable-next-line no-console
         console.error(ex)
-        return Results.err("unknown error occurred")
+        return err("unknown error occurred")
     }
 }
 
