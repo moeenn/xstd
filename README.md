@@ -1,11 +1,9 @@
 ## Javascript standard library.
-
-Attempt at creating useful functionality, which should have already been in the standard library. Primary usage target is NodeJS.
+Extended Standard Library for JavaScript and NodeJS.
 
 
 #### TODO
 
-- [ ] Executor service
 - [ ] Http status
 - [ ] Threads
 - [ ] CSV
