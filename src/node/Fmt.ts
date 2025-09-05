@@ -1,4 +1,5 @@
 import { styleText } from "node:util"
+import process from "node:process"
 import type { Stringable } from "./Print.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
 
