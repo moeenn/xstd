@@ -92,12 +92,28 @@ describe("argparse usage tests", () => {
                 name: "name",
                 kind: "string",
                 description: "name of the user",
-                optional: true,
+                default: "User",
             },
         ])
 
         const parsedArgs = parser.parse<CommandLineArgs>()
         assert.equal(parsedArgs.isValid, true)
+    })
+
+    it("invalid flag format", () => {
+        const inputArgs = ["node", "/some/test/script.js", "--wrong-format"]
+        const parser = new Argparse(inputArgs, [
+            {
+                name: "wrong-format",
+                kind: "string",
+                description: "a wrong flag",
+            },
+        ])
+
+        const parsedArgs = parser.parse()
+        assert.equal(parsedArgs.isValid, false)
+        assert(parsedArgs.error != null)
+        assert(parsedArgs.error.includes("unknown"))
     })
 
     // TODO: test returned errors.

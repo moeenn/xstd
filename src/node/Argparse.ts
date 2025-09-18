@@ -5,13 +5,19 @@ import { StringBuilder } from "#src/core/StringBuilder.js"
 import { type Option, Options } from "#src/core/Option.js"
 import { Results, type Result } from "#src/core/Result.js"
 
-export type CliOption = {
+type CliOptionsBase = {
     readonly name: string
-    readonly kind: "string" | "int" | "float" | "boolean"
     readonly description: string
     readonly usage?: string
-    readonly optional?: boolean
 }
+
+export type CliOption = CliOptionsBase &
+    (
+        | { kind: "string"; default?: string }
+        | { kind: "int"; default?: number }
+        | { kind: "float"; default?: number }
+        | { kind: "boolean"; default?: boolean }
+    )
 
 type MapValue = string | number | boolean
 
@@ -30,7 +36,7 @@ export class Argparse {
                 name: "help",
                 kind: "boolean",
                 description: "Print usage details and exit",
-                optional: true,
+                default: false,
             },
             ...cliOptions,
         ]
@@ -67,9 +73,12 @@ export class Argparse {
 
         // ensure all require args have been provded.
         for (const option of this.#options) {
-            if (option.optional) continue
             if (!(option.name in this.#map)) {
-                return Results.err(`missing required flag: ${option.name}`)
+                if (option.default != undefined) {
+                    this.#map[option.name] = option.default
+                } else {
+                    return Results.err(`missing required flag: ${option.name}`)
+                }
             }
         }
 
