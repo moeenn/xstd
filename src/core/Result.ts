@@ -22,6 +22,11 @@ function wrap(result: ErrVariant, prefix: string): ErrVariant {
 
 const nil = (): NilResult => ok(null)
 
+function wrap(result: ErrVariant, prefix: string): ErrVariant {
+    result.error = prefix + ": " + result.error
+    return result
+}
+
 const toOption = <T>(result: Result<T>): Option<T> =>
     result.isValid ? Options.some(result.value) : Options.none()
 
@@ -66,6 +71,7 @@ export const Results = {
     err,
     wrap,
     nil,
+    wrap,
     toOption,
     of,
     ofPromise,

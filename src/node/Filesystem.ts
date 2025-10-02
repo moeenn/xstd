@@ -65,13 +65,22 @@ async function touch(path: string): Promise<NilResult> {
     return Results.nil()
 }
 
+async function makeDir(path: string, makeParents = false): Promise<NilResult> {
+    const result = await Results.ofPromise(fs.mkdir(path, { recursive: makeParents }))
+    if (!result.isValid) {
+        return result
+    }
+
+    return Results.nil()
+}
+
 export const Filesystem = {
     exists,
     isFile,
     isDirectory,
     isLink,
     touch,
-    // TODO: makeDir (with -p)
+    makeDir,
     // TODO: makeLink
     // TODO: removeFile
     // TODO: removeDir
