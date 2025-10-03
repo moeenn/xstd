@@ -4,7 +4,7 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http"
 import { Results, type NilResult, type Result } from "#src/core/Result.js"
 import { JsonLogger, type AbstractLogger } from "./Logger.js"
 import { Options } from "#src/core/Option.js"
-import { startCluster, type ClusterWorkerCount } from "./Cluster.js"
+import { Cluster, type ClusterWorkerCount } from "./Cluster.js"
 
 export type HttpServerConfig = {
     host: string
@@ -218,7 +218,7 @@ export class HttpServer {
         return Results.nil()
     }
 
-    runCluster(options: { workers: ClusterWorkerCount }): void {
+    runAsCluster(options: { workers: ClusterWorkerCount }): void {
         const logger = this.#logger
         const entrypoint = async () => {
             const runResult = this.run()
@@ -228,6 +228,8 @@ export class HttpServer {
                 })
             }
         }
-        startCluster(logger, entrypoint, options.workers)
+
+        const cluster = new Cluster({ logger, workerCount: options.workers })
+        cluster.start(entrypoint)
     }
 }

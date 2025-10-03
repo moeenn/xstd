@@ -75,7 +75,7 @@ export abstract class AbstractLogger {
 
     constructor(level?: LogLevel, writer?: Writer) {
         this.currentLevel = level ?? LogLevel.Info
-        this.writer = writer ?? ConsoleWriter
+        this.writer = writer ?? new ConsoleWriter()
     }
 
     // eslint-disable-next-line no-unused-vars
@@ -133,7 +133,10 @@ export class Logger extends AbstractLogger {
 
     static DefaultLogger(): Logger {
         if (!Logger.#defaultLogger) {
-            Logger.#defaultLogger = new Logger(LogLevel.Info, ConsoleWriter)
+            Logger.#defaultLogger = new Logger(
+                LogLevel.Info,
+                new ConsoleWriter(),
+            )
         }
         return Logger.#defaultLogger
     }
@@ -165,7 +168,7 @@ export class JsonLogger extends AbstractLogger {
         if (!JsonLogger.#defaultLogger) {
             JsonLogger.#defaultLogger = new JsonLogger(
                 LogLevel.Info,
-                ConsoleWriter,
+                new ConsoleWriter(),
             )
         }
         return JsonLogger.#defaultLogger
