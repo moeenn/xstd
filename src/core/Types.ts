@@ -27,15 +27,13 @@ export const Type: Record<KnownType, KnownType> = {
     ReadableStream: "ReadableStream",
 }
 
-// TODO: rename to something less confusing.
-export type Any = {
+type JsObject = {
     constructor: {
         name: string
     }
 }
 
-// TODO: add assertion to return type to allow type narrowing at call site.
-function isType(input: Any, targetType: KnownType): boolean {
+function isType(input: JsObject, targetType: KnownType): boolean {
     const typeName = input.constructor.name
     switch (typeName) {
         case Type.Number:
@@ -46,7 +44,7 @@ function isType(input: Any, targetType: KnownType): boolean {
     }
 }
 
-function getType(input: Any): Result<KnownType> {
+function getType(input: JsObject): Result<KnownType> {
     const typeName = input.constructor.name
     for (const knownType of Object.values(Type)) {
         if (typeName === knownType) {

@@ -9,7 +9,7 @@ export class Time {
         this.#minutes = minutes
     }
 
-    of(hours: number, minutes: number): Result<Time> {
+    static of(hours: number, minutes: number): Result<Time> {
         if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
             return Results.err(`invalid time: ${hours}:${minutes}`)
         }

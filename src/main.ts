@@ -1,22 +1,28 @@
-import { Argparse } from "./node/Argparse.js"
-import process from "node:process"
+import { HttpClient, HttpRequest } from "./core/HttpClient.js"
+import { Results, type NilResult } from "./core/Result.js"
 
-function main() {
-    const parser = new Argparse(process.argv, [
-        {
-            name: "url",
-            kind: "string",
-            description: "URL of the page to scrape",
-        },
-    ])
+async function run(): Promise<NilResult> {
+    const url = new URL("https://jsonplaceholder.typicode.com/todos/1")
+    const req = new HttpRequest(url)
+        .setMethod("GET")
+        .setResponseType("json")
+        .setTimeout(20_000)
 
-    const parsedArgs = parser.parse()
-    if (!parsedArgs.isValid) {
-        console.error("error: " + parsedArgs.error)
-        return
+    const client = new HttpClient()
+    const resp = await client.send(req)
+    if (!resp.isValid) {
+        return Results.wrap(resp, "request failed")
     }
 
-    console.log(parsedArgs.value)
+    console.log(resp.value)
+    return Results.nil()
+}
+
+async function main() {
+    const err = await run()
+    if (!err.isValid) {
+        console.error("error: " + err.error)
+    }
 }
 
 main()

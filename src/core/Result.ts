@@ -5,20 +5,15 @@ type ErrVariant = { readonly isValid: false; error: string }
 export type Result<T> = OkVariant<T> | ErrVariant
 export type NilResult = Result<null>
 
-const ok = <T>(value: T): Result<T> => ({
+const ok = <T,>(value: T): Result<T> => ({
     isValid: true,
     value: value,
 })
 
-const err = <T>(error: string): Result<T> => ({
+const err = <T,>(error: string): Result<T> => ({
     isValid: false,
     error: error,
 })
-
-function wrap(result: ErrVariant, prefix: string): ErrVariant {
-    result.error = prefix + ": " + result.error
-    return result
-}
 
 const nil = (): NilResult => ok(null)
 
@@ -27,7 +22,7 @@ function wrap(result: ErrVariant, prefix: string): ErrVariant {
     return result
 }
 
-const toOption = <T>(result: Result<T>): Option<T> =>
+const toOption = <T,>(result: Result<T>): Option<T> =>
     result.isValid ? Options.some(result.value) : Options.none()
 
 function of<T>(fn: () => T): Result<T> {
@@ -71,7 +66,6 @@ export const Results = {
     err,
     wrap,
     nil,
-    wrap,
     toOption,
     of,
     ofPromise,

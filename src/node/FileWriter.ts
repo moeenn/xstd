@@ -1,54 +1,28 @@
 import fs from "node:fs/promises"
 import fsSync from "node:fs"
-import { Results, type NilResult, type Result } from "#src/core/Result.js"
+import { Results, type NilResult } from "#src/core/Result.js"
 import { Filesystem } from "./Filesystem.js"
 import { Type, Types } from "../core/Types.js"
 import { type ReadableStream } from "node:stream/web"
 import { Readable } from "node:stream"
 import { finished } from "node:stream/promises"
 
-export class File {
-    #path: string
-    #pathChecked: boolean
-
-    constructor(path: string) {
-        this.#path = path
-        this.#pathChecked = false
-    }
-
-    static async open(path: string): Promise<Result<File>> {
-        const fileExists = await Filesystem.exists(path)
-        if (!fileExists) {
-            return Results.err(`file does not exist: ${path}`)
-        }
-
-        const isFile = await Filesystem.isFile(path)
-        if (!isFile.isValid) {
-            return isFile
-        }
-
-        const file = new File(path)
-        file.#pathChecked = true
-
-        return Results.ok(file)
-    }
-
-    async write(content: string | Buffer | Blob): Promise<NilResult> {
-        if (!this.#pathChecked) {
-            const exists = await Filesystem.exists(this.#path)
-            if (!exists) {
-                const createResult = await Filesystem.touch(this.#path)
-                if (!createResult.isValid) {
-                    return Results.wrap(createResult, "failed to create file")
-                }
-            } else {
-                const isFile = await Filesystem.isFile(this.#path)
-                if (!isFile.isValid) {
-                    return isFile
-                }
+export class FileWriter {
+    static async write(
+        path: string,
+        content: string | Buffer | Blob,
+    ): Promise<NilResult> {
+        const exists = await Filesystem.exists(path)
+        if (!exists) {
+            const createResult = await Filesystem.touch(path)
+            if (!createResult.isValid) {
+                return Results.wrap(createResult, "failed to create file")
             }
-
-            this.#pathChecked = true
+        } else {
+            const isFile = await Filesystem.isFile(path)
+            if (!isFile.isValid) {
+                return Results.wrap(isFile, "path is not a valid file")
+            }
         }
 
         const contentType = Types.getType(content)
@@ -93,10 +67,7 @@ export class File {
                 return Results.err("invalid content type provided")
         }
 
-        const writeResult = await Results.ofPromise(
-            fs.writeFile(this.#path, buffer),
-        )
-
+        const writeResult = await Results.ofPromise(fs.writeFile(path, buffer))
         if (!writeResult.isValid) {
             return Results.wrap(writeResult, "failed to write content")
         }
@@ -106,13 +77,13 @@ export class File {
 
     /**
      * Write file to disk using web Readable stream.
-     *
      * @param {ReadableStream} inputStream - Type imported from "node:stream/web"
      */
-    async writeFromStream(inputStream: ReadableStream): Promise<NilResult> {
-        const writeStream = Results.of(() =>
-            fsSync.createWriteStream(this.#path),
-        )
+    static async writeFromStream(
+        path: string,
+        inputStream: ReadableStream,
+    ): Promise<NilResult> {
+        const writeStream = Results.of(() => fsSync.createWriteStream(path))
         if (!writeStream.isValid) {
             return Results.wrap(writeStream, "failed to create write stream")
         }
