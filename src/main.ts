@@ -1,21 +1,26 @@
 import { HttpClient, HttpRequest } from "./core/HttpClient.js"
 import { Results, type NilResult } from "./core/Result.js"
 import { fmt } from "./node/Fmt.js"
+import { JsonLogger, LogLevel } from "./node/Logger.js"
+import { ConsoleWriter } from "./node/Writer.js"
 
 async function run(): Promise<NilResult> {
+    const logger = new JsonLogger(LogLevel.Info, new ConsoleWriter())
+
     const url = new URL("https://jsonplaceholder.typicode.com/todos/1")
     const req = new HttpRequest(url)
         .setMethod("GET")
         .setResponseType("json")
         .setTimeout(20_000)
 
+    logger.info("sending network request")
     const client = new HttpClient()
     const resp = await client.send(req)
     if (!resp.isValid) {
         return Results.wrap(resp, "request failed")
     }
 
-    console.log(resp.value)
+    logger.info("valid response", { data: resp.value })
     return Results.nil()
 }
 

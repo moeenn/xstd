@@ -3,8 +3,8 @@ export interface Writer {
     write(data: string): void
 }
 
-export class ConsoleWriter {
-    static write(data: string) {
+export class ConsoleWriter implements Writer {
+    write(data: string) {
         // eslint-disable-next-line no-console
         console.log(data)
     }
