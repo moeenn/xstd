@@ -3,11 +3,11 @@ export interface Writer {
     write(data: string): void
 }
 
-export const ConsoleWriter: Writer = {
-    write(data: string) {
+export class ConsoleWriter {
+    static write(data: string) {
         // eslint-disable-next-line no-console
         console.log(data)
-    },
-} as const
+    }
+}
 
 // TODO: implement file writer class.

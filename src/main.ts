@@ -1,5 +1,6 @@
 import { HttpClient, HttpRequest } from "./core/HttpClient.js"
 import { Results, type NilResult } from "./core/Result.js"
+import { fmt } from "./node/Fmt.js"
 
 async function run(): Promise<NilResult> {
     const url = new URL("https://jsonplaceholder.typicode.com/todos/1")
@@ -21,7 +22,7 @@ async function run(): Promise<NilResult> {
 async function main() {
     const err = await run()
     if (!err.isValid) {
-        console.error("error: " + err.error)
+        fmt.error("error: " + err.error)
     }
 }
 

@@ -66,7 +66,9 @@ async function touch(path: string): Promise<NilResult> {
 }
 
 async function makeDir(path: string, makeParents = false): Promise<NilResult> {
-    const result = await Results.ofPromise(fs.mkdir(path, { recursive: makeParents }))
+    const result = await Results.ofPromise(
+        fs.mkdir(path, { recursive: makeParents }),
+    )
     if (!result.isValid) {
         return result
     }

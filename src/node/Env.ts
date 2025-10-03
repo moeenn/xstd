@@ -20,7 +20,7 @@ export class Env {
     }
 
     readString(name: string, fallback?: string): Result<string> {
-        const value = process.env[name]
+        const value = this.#args[name]
         if (value == undefined) {
             if (fallback != undefined) {
                 return Results.ok(fallback.trim())
