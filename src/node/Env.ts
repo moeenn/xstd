@@ -33,12 +33,12 @@ export class Env {
 
     readNumber(name: string, fallback?: number): Result<number> {
         const rawValue = this.readString(name, String(fallback))
-        if (!rawValue.isValid) {
+        if (rawValue.isError) {
             return rawValue
         }
 
         const parsedValue = Results.of(() => parseFloat(rawValue.value))
-        if (!parsedValue.isValid) {
+        if (parsedValue.isError) {
             return Results.err(
                 `environment variable ${name} is not a valid number`,
             )

@@ -29,7 +29,7 @@ class Future<T> {
     async run(): Promise<Result<T>> {
         this.state = { status: "inprogress" }
         const result = await Results.ofPromise(this.#callback())
-        if (!result.isValid) {
+        if (result.isError) {
             this.state = { status: "errored", error: result.error }
             return Results.err(result.error)
         }
@@ -97,7 +97,7 @@ export class ExecutorService<T> {
         const future = new Future(callback)
         future.onComplete(() => {
             const nextFuture = this.#getNextFuture()
-            if (nextFuture.isPresent) {
+            if (!nextFuture.isAbsent) {
                 nextFuture.value.run()
             }
         })

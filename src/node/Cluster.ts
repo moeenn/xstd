@@ -40,7 +40,7 @@ export class Cluster {
 
         if (!cluster.isPrimary) {
             Results.ofPromise(entrypoint()).then((result) => {
-                if (!result.isValid) {
+                if (result.isError) {
                     this.#logger?.error("server startup failure", {
                         error: result.error,
                     })

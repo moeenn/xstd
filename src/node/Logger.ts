@@ -20,14 +20,14 @@ export class LogLevel {
         }
 
         const envValue = env.readString(key)
-        if (!envValue.isValid) {
+        if (envValue.isError) {
             return envValue
         }
 
         const foundLevel = Options.of(
             levels.find((level) => level.value === envValue.value),
         )
-        if (!foundLevel.isPresent) {
+        if (foundLevel.isAbsent) {
             return Results.err(
                 `unknown value for environment variable ${key}: ${envValue.value}`,
             )
@@ -87,7 +87,7 @@ export abstract class AbstractLogger {
         details?: Record<string, unknown>,
     ): Result<LogEntry> {
         const timestamp = DateTimeFormatter.format(new Date(), Format.full)
-        if (!timestamp.isValid) {
+        if (timestamp.isError) {
             return Results.err(`failed to get timestamp: ` + timestamp.error)
         }
 
@@ -109,7 +109,7 @@ export abstract class AbstractLogger {
                     message,
                     details,
                 )
-                if (!logEntry.isValid) {
+                if (logEntry.isError) {
                     this.error(logEntry.error)
                     return
                 }
@@ -177,7 +177,7 @@ export class JsonLogger extends AbstractLogger {
     printEntry(logEntry: LogEntry): void {
         const payload = { ...logEntry, ...logEntry.details, details: undefined }
         const encoded = Results.of(() => JSON.stringify(payload))
-        if (!encoded.isValid) {
+        if (encoded.isError) {
             return this.error("failed to json encode log entry", {
                 error: encoded.error,
             })

@@ -15,18 +15,18 @@ export class FileWriter {
         const exists = await Filesystem.exists(path)
         if (!exists) {
             const createResult = await Filesystem.touch(path)
-            if (!createResult.isValid) {
+            if (createResult.isError) {
                 return Results.wrap(createResult, "failed to create file")
             }
         } else {
             const isFile = await Filesystem.isFile(path)
-            if (!isFile.isValid) {
+            if (isFile.isError) {
                 return Results.wrap(isFile, "path is not a valid file")
             }
         }
 
         const contentType = Types.getType(content)
-        if (!contentType.isValid) {
+        if (contentType.isError) {
             return Results.wrap(contentType, "failed to detect content type")
         }
 
@@ -44,7 +44,7 @@ export class FileWriter {
                 const conversionResult = await Results.ofPromise(
                     (content as Blob).arrayBuffer(),
                 )
-                if (!conversionResult.isValid) {
+                if (conversionResult.isError) {
                     return Results.wrap(
                         conversionResult,
                         "failed to convert blob to buffer",
@@ -54,7 +54,7 @@ export class FileWriter {
                 const bufferResult = Results.of(() =>
                     Buffer.from(conversionResult.value),
                 )
-                if (!bufferResult.isValid) {
+                if (bufferResult.isError) {
                     return Results.wrap(
                         bufferResult,
                         "failed to instantiate buffer",
@@ -68,7 +68,7 @@ export class FileWriter {
         }
 
         const writeResult = await Results.ofPromise(fs.writeFile(path, buffer))
-        if (!writeResult.isValid) {
+        if (writeResult.isError) {
             return Results.wrap(writeResult, "failed to write content")
         }
 
@@ -84,21 +84,22 @@ export class FileWriter {
         inputStream: ReadableStream,
     ): Promise<NilResult> {
         const writeStream = Results.of(() => fsSync.createWriteStream(path))
-        if (!writeStream.isValid) {
+        if (writeStream.isError) {
             return Results.wrap(writeStream, "failed to create write stream")
         }
 
         const outputStream = Results.of(() =>
             Readable.fromWeb(inputStream).pipe(writeStream.value),
         )
-        if (!outputStream.isValid) {
+        if (outputStream.isError) {
             return Results.wrap(outputStream, "failed to create output stream")
         }
 
         const finalResult = await Results.ofPromise(
             finished(outputStream.value),
         )
-        if (!finalResult.isValid) {
+
+        if (finalResult.isError) {
             return Results.wrap(finalResult, "stream completion failed")
         }
 

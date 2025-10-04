@@ -3,17 +3,17 @@ import { Results, type NilResult, type Result } from "#src/core/Result.js"
 
 async function exists(path: string): Promise<boolean> {
     const output = await Results.ofPromise(fs.access(path, fs.constants.F_OK))
-    return output.isValid
+    return !output.isError
 }
 
 async function isDirectory(path: string): Promise<Result<boolean>> {
     const output = await Results.ofPromise(fs.lstat(path))
-    if (!output.isValid) {
+    if (output.isError) {
         return Results.wrap(output, "failed to get details of path")
     }
 
     const isDir = Results.of(() => output.value.isDirectory())
-    if (!isDir.isValid) {
+    if (isDir.isError) {
         return Results.wrap(isDir, "failed to check if path is a directory")
     }
 
@@ -22,12 +22,12 @@ async function isDirectory(path: string): Promise<Result<boolean>> {
 
 async function isFile(path: string): Promise<Result<boolean>> {
     const output = await Results.ofPromise(fs.lstat(path))
-    if (!output.isValid) {
+    if (output.isError) {
         return Results.wrap(output, "failed to get details of path")
     }
 
     const isFile = Results.of(() => output.value.isFile())
-    if (!isFile.isValid) {
+    if (isFile.isError) {
         return Results.wrap(isFile, "failed to check if path is a file")
     }
 
@@ -36,12 +36,12 @@ async function isFile(path: string): Promise<Result<boolean>> {
 
 async function isLink(path: string): Promise<Result<boolean>> {
     const output = await Results.ofPromise(fs.lstat(path))
-    if (!output.isValid) {
+    if (output.isError) {
         return Results.wrap(output, "failed to get details of path")
     }
 
     const isLink = Results.of(() => output.value.isSymbolicLink())
-    if (!isLink.isValid) {
+    if (isLink.isError) {
         return Results.wrap(
             isLink,
             "failed to check if path is a symbolic link",
@@ -53,7 +53,7 @@ async function isLink(path: string): Promise<Result<boolean>> {
 
 async function touch(path: string): Promise<NilResult> {
     const handle = await Results.ofPromise(fs.open(path, "w"))
-    if (!handle.isValid) {
+    if (handle.isError) {
         return Results.wrap(handle, "failed to create file")
     }
 
@@ -69,7 +69,7 @@ async function makeDir(path: string, makeParents = false): Promise<NilResult> {
     const result = await Results.ofPromise(
         fs.mkdir(path, { recursive: makeParents }),
     )
-    if (!result.isValid) {
+    if (result.isError) {
         return result
     }
 

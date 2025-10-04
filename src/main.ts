@@ -16,7 +16,7 @@ async function run(): Promise<NilResult> {
     logger.info("sending network request")
     const client = new HttpClient()
     const resp = await client.send(req)
-    if (!resp.isValid) {
+    if (resp.isError) {
         return Results.wrap(resp, "request failed")
     }
 
@@ -26,7 +26,7 @@ async function run(): Promise<NilResult> {
 
 async function main() {
     const err = await run()
-    if (!err.isValid) {
+    if (err.isError) {
         fmt.error("error: " + err.error)
     }
 }

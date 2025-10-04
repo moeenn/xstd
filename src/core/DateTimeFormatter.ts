@@ -42,7 +42,7 @@ export class DateTimeFormatter {
         for (const placeholder of placeholdersSet) {
             const foundDatePlaceholder =
                 DateTimeFormatter.findPlaceholder(placeholder)
-            if (!foundDatePlaceholder.isPresent) {
+            if (foundDatePlaceholder.isAbsent) {
                 return Results.err(`unknown placeholder: ${placeholder}`)
             }
 

@@ -23,12 +23,12 @@ export class Time {
         }
 
         const hoursAsNumber = Results.of(() => parseInt(hours))
-        if (!hoursAsNumber.isValid) {
+        if (hoursAsNumber.isError) {
             return Results.err(`invalid hours value: ${hours}`)
         }
 
         const minutesAsNumber = Results.of(() => parseInt(minutes))
-        if (!minutesAsNumber.isValid) {
+        if (minutesAsNumber.isError) {
             return Results.err(`invalid minutes value: ${minutes}`)
         }
 
@@ -52,12 +52,12 @@ export class Time {
         }
 
         const hoursAsNumber = Results.of(() => parseInt(hours))
-        if (!hoursAsNumber.isValid) {
+        if (hoursAsNumber.isError) {
             return Results.err(`invalid hours value: ${hours}`)
         }
 
         const minutesAsNumber = Results.of(() => parseInt(minutes))
-        if (!minutesAsNumber.isValid) {
+        if (minutesAsNumber.isError) {
             return Results.err(`invalid minutes value: ${hours}`)
         }
 

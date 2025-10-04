@@ -116,13 +116,13 @@ export class HttpClient {
     async send(request: HttpRequest): Promise<Result<HttpResponse>> {
         let body: Option<string | FormData> = Options.none()
 
-        if (request.body.isPresent) {
+        if (!request.body.isAbsent) {
             const rawBody = request.body.value
             if (rawBody instanceof FormData) {
                 body = Options.some(rawBody)
             } else {
                 const encoded = Results.of(() => JSON.stringify(rawBody))
-                if (!encoded.isValid) {
+                if (encoded.isError) {
                     return Results.wrap(
                         encoded,
                         "failed to json encode request body",
@@ -142,7 +142,7 @@ export class HttpClient {
             }),
         )
 
-        if (!res.isValid) {
+        if (res.isError) {
             return Results.wrap(res, "request failed")
         }
 
@@ -150,7 +150,7 @@ export class HttpClient {
         switch (request.responseType) {
             case ResponseType.text: {
                 const data = await Results.ofPromise(res.value.text())
-                if (!data.isValid) {
+                if (data.isError) {
                     return Results.wrap(
                         data,
                         "failed to read response data as text",
@@ -163,7 +163,7 @@ export class HttpClient {
 
             case ResponseType.blob: {
                 const data = await Results.ofPromise(res.value.blob())
-                if (!data.isValid) {
+                if (data.isError) {
                     return Results.wrap(
                         data,
                         "failed to read response data as binay blob",
@@ -176,7 +176,7 @@ export class HttpClient {
 
             case ResponseType.json: {
                 const responseJson = await Results.ofPromise(res.value.json())
-                if (!responseJson.isValid) {
+                if (responseJson.isError) {
                     return Results.wrap(
                         responseJson,
                         "failed to parse response as json",
@@ -203,13 +203,13 @@ export class HttpStreamClient {
         request: HttpRequest,
     ): Promise<Result<ReadableStream<unknown>>> {
         let body: Option<string | FormData> = Options.none()
-        if (request.body.isPresent) {
+        if (!request.body.isAbsent) {
             const rawBody = request.body.value
             if (rawBody instanceof FormData) {
                 body = Options.some(rawBody)
             } else {
                 const encoded = Results.of(() => JSON.stringify(rawBody))
-                if (!encoded.isValid) {
+                if (encoded.isError) {
                     return Results.wrap(
                         encoded,
                         "failed to json encode request body",
@@ -229,7 +229,7 @@ export class HttpStreamClient {
             }),
         )
 
-        if (!res.isValid) {
+        if (res.isError) {
             return Results.wrap(res, "request failed")
         }
 
