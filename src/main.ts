@@ -12,9 +12,10 @@ async function run(): Promise<NilResult> {
         .setMethod("GET")
         .setResponseType("json")
         .setTimeout(20_000)
+        .setRetry({ maxRetries: 5, retryStatusCode: 200 })
 
     logger.info("sending network request")
-    const client = new HttpClient()
+    const client = new HttpClient(logger)
     const resp = await client.send(req)
     if (resp.isError) {
         return Results.wrap(resp, "request failed")

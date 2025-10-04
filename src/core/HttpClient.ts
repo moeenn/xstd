@@ -1,5 +1,6 @@
+import type { AbstractLogger } from "#src/node/Logger.js"
 import { Options, type Option } from "./Option.js"
-import { Results, type Result } from "./Result.js"
+import { Results, type NilResult, type Result } from "./Result.js"
 import { type ReadableStream } from "node:stream/web"
 
 type RequestBody = Record<string, unknown> | FormData
@@ -19,6 +20,41 @@ const ResponseType: Record<HttpResponseType, HttpResponseType> = {
     blob: "blob",
 }
 
+class RequestRetry {
+    #maxRetries: number
+    #retries: number
+    #retryStatusCode: number
+
+    constructor(maxRetries: number, retryStatusCode = 429) {
+        this.#maxRetries = maxRetries
+        this.#retries = 0
+        this.#retryStatusCode = retryStatusCode
+    }
+
+    get retries() {
+        return this.#retries
+    }
+
+    get retryStatusCode() {
+        return this.#retryStatusCode
+    }
+
+    incrementRetryCount(): NilResult {
+        if (this.#retries >= this.#maxRetries - 1) {
+            return Results.err(`max number of retries (${this.#maxRetries}) exceeded`)
+        }
+
+        this.#retries++
+        return Results.nil()
+    }
+
+    calculateRetryDelay(): number {
+        const delay = Math.pow(2, this.#retries)
+        const jitter = (delay / 3) + Math.random() * (delay / 3)
+        return (delay + jitter) * 1_000
+    }
+}
+
 export class HttpRequest {
     readonly url: URL
     #method: HttpRequestMethod
@@ -26,6 +62,7 @@ export class HttpRequest {
     #responseType: HttpResponseType
     #headers: Headers
     #timeout: number
+    #retry: Option<RequestRetry>
 
     constructor(url: URL) {
         this.url = url
@@ -33,6 +70,7 @@ export class HttpRequest {
         this.#body = Options.none()
         this.#responseType = ResponseType.json
         this.#timeout = 10_000 // 10 seconds.
+        this.#retry = Options.none()
         this.#headers = new Headers({
             Accept: "application/json",
         })
@@ -56,6 +94,10 @@ export class HttpRequest {
 
     get timeout(): number {
         return this.#timeout
+    }
+
+    get retry(): Option<RequestRetry> {
+        return this.#retry
     }
 
     setTimeout(timeout: number) {
@@ -98,6 +140,12 @@ export class HttpRequest {
 
         return this
     }
+
+    setRetry(args: { maxRetries: number, retryStatusCode?: number }) {
+        const retry = new RequestRetry(args.maxRetries, args.retryStatusCode)
+        this.#retry = Options.some(retry)
+        return this
+    }
 }
 
 export class HttpResponse {
@@ -113,7 +161,13 @@ export class HttpResponse {
 }
 
 export class HttpClient {
-    async send(request: HttpRequest): Promise<Result<HttpResponse>> {
+    #logger?: AbstractLogger
+
+    constructor(logger?: AbstractLogger) {
+        this.#logger = logger
+    }
+
+    async #sendRequest(request: HttpRequest): Promise<{ result: Result<HttpResponse>, retry: boolean }> {
         let body: Option<string | FormData> = Options.none()
 
         if (!request.body.isAbsent) {
@@ -123,10 +177,13 @@ export class HttpClient {
             } else {
                 const encoded = Results.of(() => JSON.stringify(rawBody))
                 if (encoded.isError) {
-                    return Results.wrap(
-                        encoded,
-                        "failed to json encode request body",
-                    )
+                    return {
+                        result: Results.wrap(
+                            encoded,
+                            "failed to json encode request body",
+                        ),
+                        retry: false,
+                    }
                 }
 
                 body = Options.some(encoded.value)
@@ -143,61 +200,120 @@ export class HttpClient {
         )
 
         if (res.isError) {
-            return Results.wrap(res, "request failed")
+            return { result: Results.wrap(res, "request failed"), retry: true }
         }
 
         const statusCode = res.value.status
+        if (!request.retry.isAbsent && statusCode == request.retry.value.retryStatusCode) {
+            return {
+                result: Results.err(`retry status code ${statusCode} received`),
+                retry: true,
+            }
+        }
+
         switch (request.responseType) {
             case ResponseType.text: {
                 const data = await Results.ofPromise(res.value.text())
                 if (data.isError) {
-                    return Results.wrap(
-                        data,
-                        "failed to read response data as text",
-                    )
+                    return {
+                        result: Results.wrap(
+                            data,
+                            "failed to read response data as text",
+                        ),
+                        retry: false
+                    }
                 }
-                return Results.ok(
-                    new HttpResponse(statusCode, ResponseType.text, data.value),
-                )
+                return {
+                    result: Results.ok(
+                        new HttpResponse(statusCode, ResponseType.text, data.value),
+                    ),
+                    retry: false,
+                }
             }
 
             case ResponseType.blob: {
                 const data = await Results.ofPromise(res.value.blob())
                 if (data.isError) {
-                    return Results.wrap(
-                        data,
-                        "failed to read response data as binay blob",
-                    )
+                    return {
+                        result: Results.wrap(
+                            data,
+                            "failed to read response data as binay blob",
+                        ),
+                        retry: false,
+                    }
                 }
-                return Results.ok(
-                    new HttpResponse(statusCode, ResponseType.blob, data.value),
-                )
+                return {
+                    result: Results.ok(
+                        new HttpResponse(statusCode, ResponseType.blob, data.value),
+                    ),
+                    retry: false
+                }
             }
 
             case ResponseType.json: {
                 const responseJson = await Results.ofPromise(res.value.json())
                 if (responseJson.isError) {
-                    return Results.wrap(
-                        responseJson,
-                        "failed to parse response as json",
-                    )
+                    return {
+                        result: Results.wrap(
+                            responseJson,
+                            "failed to parse response as json",
+                        ),
+                        retry: false,
+                    }
                 }
 
                 const data = responseJson.value
-                return Results.ok(
-                    new HttpResponse(statusCode, ResponseType.json, data),
-                )
+                return {
+                    result: Results.ok(
+                        new HttpResponse(statusCode, ResponseType.json, data),
+                    ),
+                    retry: false,
+                }
             }
 
             default: {
-                return Results.err(
-                    "unexpected response type: " + request.responseType,
-                )
+                return {
+                    result: Results.err(
+                        "unexpected response type: " + request.responseType,
+                    ),
+                    retry: false
+                }
             }
         }
     }
+
+    async send(request: HttpRequest): Promise<Result<HttpResponse>> {
+        if (request.retry.isAbsent) {
+            const result = await this.#sendRequest(request)
+            return result.result
+        }
+
+        const result = await this.#sendRequest(request)
+        if (!result.retry) {
+            return result.result
+        }
+
+        this.#logger?.info("retrying request", {
+            url: request.url,
+            method: request.method,
+            retryCount: request.retry.value.retries + 1,
+        })
+
+        const delay = request.retry.value.calculateRetryDelay()
+
+        // sleep.
+        await new Promise(resolve => setTimeout(resolve, delay))
+        const incrementRes = request.retry.value.incrementRetryCount()
+        if (incrementRes.isError) {
+            return incrementRes
+        }
+
+        // call self recursively.
+        return this.send(request)
+    }
 }
 
+// TODO: also incorporate exponential back-off.
 export class HttpStreamClient {
     async stream(
         request: HttpRequest,
