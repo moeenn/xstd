@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { MissingArgumentError, named } from "./named.js"
+import { MissingArgumentError, named } from "./NamedSQL.js"
 
 test("basic scenario", () => {
     const input = `
@@ -87,7 +87,7 @@ class Entity {
     constructor(
         public id: number,
         public fullName: string,
-    ) {}
+    ) { }
 }
 
 test("camelCase args", () => {

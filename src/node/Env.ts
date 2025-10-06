@@ -1,27 +1,21 @@
 import { Results, type Result } from "#src/core/Result.js"
-import process from "node:process"
 
 export class Env {
     #args: Record<string, string>
 
-    constructor(args?: Record<string, string>) {
-        if (args) {
-            this.#args = args
-            return
-        }
+	constructor(args: Record<string, string> | NodeJS.ProcessEnv) {
+		const converted: Record<string, string> = {}
+		for (const [key, value] of Object.entries(args)) {
+			if (!value) continue
+				converted[key] = value
+		}
 
-        const converted: Record<string, string> = {}
-        for (const [key, value] of Object.entries(process.env)) {
-            if (!value) continue
-            converted[key] = value
-        }
-
-        this.#args = converted
-    }
+		this.#args = converted
+	}
 
     readString(name: string, fallback?: string): Result<string> {
-        const value = process.env[name]
-        if (value == undefined) {
+        const value = this.#args[name]
+        if (!value) {
             if (fallback != undefined) {
                 return Results.ok(fallback.trim())
             }
@@ -30,6 +24,14 @@ export class Env {
 
         return Results.ok(value.trim())
     }
+
+    mustReadString(name: string, fallback?: string): string {
+		const result = this.readString(name, fallback)
+		if (!result.isValid) {
+			throw new Error(result.error)
+		}
+		return result.value
+	}
 
     readNumber(name: string, fallback?: number): Result<number> {
         const rawValue = this.readString(name, String(fallback))
@@ -46,4 +48,12 @@ export class Env {
 
         return parsedValue
     }
+
+    mustReadNumber(name: string, fallback?: number): number {
+		const result = this.readNumber(name, fallback)
+		if (!result.isValid) {
+			throw new Error(result.error)
+		}
+		return result.value
+	}
 }

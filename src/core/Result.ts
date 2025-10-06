@@ -15,11 +15,6 @@ const err = <T>(error: string): Result<T> => ({
     error: error,
 })
 
-function wrap(result: ErrVariant, prefix: string): ErrVariant {
-    result.error = prefix + ": " + result.error
-    return result
-}
-
 const nil = (): NilResult => ok(null)
 
 function wrap(result: ErrVariant, prefix: string): ErrVariant {
@@ -71,7 +66,6 @@ export const Results = {
     err,
     wrap,
     nil,
-    wrap,
     toOption,
     of,
     ofPromise,
