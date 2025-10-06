@@ -1,7 +1,49 @@
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { type Option, Options } from "../core/Option.js"
-import type { Future } from "./Future.js"
+import { Results, type Result } from "#src/core/Result.js"
+
+type StatusCallback = () => void
+type AsyncCallback<T> = () => Promise<T>
+
+class Future<T> {
+    #callback: AsyncCallback<T>
+    #onCompleteCallbacks: StatusCallback[]
+    state:
+        | { readonly status: "pending" }
+        | { readonly status: "inprogress" }
+        | { readonly status: "completed"; result: T }
+        | { readonly status: "errored"; error: string }
+
+    constructor(callback: AsyncCallback<T>) {
+        this.#callback = callback
+        this.#onCompleteCallbacks = []
+        this.state = { status: "pending" }
+        return this
+    }
+
+    onComplete(callback: StatusCallback) {
+        this.#onCompleteCallbacks.push(callback)
+    }
+
+    async run(): Promise<Result<T>> {
+        this.state = { status: "inprogress" }
+        const result = await Results.ofPromise(this.#callback())
+        if (result.isError) {
+            this.state = { status: "errored", error: result.error }
+            return Results.err(result.error)
+        }
+
+        this.state = { status: "completed", result: result.value }
+        if (this.#onCompleteCallbacks.length) {
+            for (const cb of this.#onCompleteCallbacks) {
+                cb()
+            }
+        }
+
+        return Results.ok(result.value)
+    }
+}
 
 export class ExecutorService<T> {
     #limit: number
@@ -51,10 +93,11 @@ export class ExecutorService<T> {
         // await this.#pollCompleteStatus()
     }
 
-    submit(future: Future<T>): void {
+    submit(callback: AsyncCallback<T>): void {
+        const future = new Future(callback)
         future.onComplete(() => {
             const nextFuture = this.#getNextFuture()
-            if (nextFuture.isPresent) {
+            if (!nextFuture.isAbsent) {
                 nextFuture.value.run()
             }
         })

@@ -9,10 +9,10 @@ test("read strings and numbers", () => {
     })
 
     const value = env.readString("TEST")
-    assert(value.isValid)
+    assert(!value.isError)
     assert(value.value === "test")
 
     const num = env.readNumber("TEST_NUMBER")
-    assert(num.isValid)
+    assert(!num.isError)
     assert(num.value === 1)
 })

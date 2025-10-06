@@ -9,7 +9,7 @@ export class Time {
         this.#minutes = minutes
     }
 
-    of(hours: number, minutes: number): Result<Time> {
+    static of(hours: number, minutes: number): Result<Time> {
         if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
             return Results.err(`invalid time: ${hours}:${minutes}`)
         }
@@ -23,12 +23,12 @@ export class Time {
         }
 
         const hoursAsNumber = Results.of(() => parseInt(hours))
-        if (!hoursAsNumber.isValid) {
+        if (hoursAsNumber.isError) {
             return Results.err(`invalid hours value: ${hours}`)
         }
 
         const minutesAsNumber = Results.of(() => parseInt(minutes))
-        if (!minutesAsNumber.isValid) {
+        if (minutesAsNumber.isError) {
             return Results.err(`invalid minutes value: ${minutes}`)
         }
 
@@ -52,12 +52,12 @@ export class Time {
         }
 
         const hoursAsNumber = Results.of(() => parseInt(hours))
-        if (!hoursAsNumber.isValid) {
+        if (hoursAsNumber.isError) {
             return Results.err(`invalid hours value: ${hours}`)
         }
 
         const minutesAsNumber = Results.of(() => parseInt(minutes))
-        if (!minutesAsNumber.isValid) {
+        if (minutesAsNumber.isError) {
             return Results.err(`invalid minutes value: ${hours}`)
         }
 

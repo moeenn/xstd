@@ -4,9 +4,9 @@ Extended Standard Library for JavaScript and NodeJS.
 
 #### TODO
 
+- [ ] LinkedList
+- [ ] Queue
+- [ ] Stack
 - [ ] Http status
-- [ ] Threads
-- [ ] CSV
 - [ ] Base64 encode / decode
-- [ ] Channel
-- [ ] Actors
+- [ ] Unit tests

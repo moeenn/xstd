@@ -5,31 +5,47 @@ import { Results } from "#src/core/Result.js"
 
 export type ClusterWorkerCount = number | "MAX"
 
-export function startCluster(
-    logger: AbstractLogger,
-    entrypoint: () => Promise<void>,
-    workers: ClusterWorkerCount,
-) {
-    const numCPUs = os.cpus().length
-    if (cluster.isPrimary) {
-        const numWorkers = workers === "MAX" ? numCPUs : workers
-        logger.info("starting cluster", { masterPID: process.pid })
-        for (let i = 0; i < numWorkers; i++) {
-            cluster.fork()
+type ClusterArgs = {
+    logger?: AbstractLogger
+    workerCount: ClusterWorkerCount
+}
+
+export class Cluster {
+    #logger?: AbstractLogger
+    #workerCount: ClusterWorkerCount
+
+    constructor(args: ClusterArgs) {
+        this.#logger = args.logger
+        this.#workerCount = args.workerCount
+    }
+
+    start(entrypoint: () => Promise<void>) {
+        const numCPUs = os.cpus().length
+        if (cluster.isPrimary) {
+            const numWorkers =
+                this.#workerCount === "MAX" ? numCPUs : this.#workerCount
+            this.#logger?.info("starting cluster", { masterPID: process.pid })
+            for (let i = 0; i < numWorkers; i++) {
+                cluster.fork()
+            }
+
+            cluster.on("exit", (worker) => {
+                this.#logger?.info("worker process died", {
+                    status: "Restarting",
+                    workerPID: worker.process.pid,
+                })
+                cluster.fork()
+            })
         }
 
-        cluster.on("exit", (worker) => {
-            logger.info("worker process died", {
-                status: "Restarting",
-                workerPID: worker.process.pid,
+        if (!cluster.isPrimary) {
+            Results.ofPromise(entrypoint()).then((result) => {
+                if (result.isError) {
+                    this.#logger?.error("server startup failure", {
+                        error: result.error,
+                    })
+                }
             })
-            cluster.fork()
-        })
-    } else {
-        Results.ofPromise(entrypoint()).then((result) => {
-            if (!result.isValid) {
-                logger.error("server startup failure", { error: result.error })
-            }
-        })
+        }
     }
 }

@@ -1,58 +1,32 @@
 import fs from "node:fs/promises"
 import fsSync from "node:fs"
-import { Results, type NilResult, type Result } from "#src/core/Result.js"
+import { Results, type NilResult } from "#src/core/Result.js"
 import { Filesystem } from "./Filesystem.js"
 import { Type, Types } from "../core/Types.js"
 import { type ReadableStream } from "node:stream/web"
 import { Readable } from "node:stream"
 import { finished } from "node:stream/promises"
 
-export class File {
-    #path: string
-    #pathChecked: boolean
-
-    constructor(path: string) {
-        this.#path = path
-        this.#pathChecked = false
-    }
-
-    static async open(path: string): Promise<Result<File>> {
-        const fileExists = await Filesystem.exists(path)
-        if (!fileExists) {
-            return Results.err(`file does not exist: ${path}`)
-        }
-
-        const isFile = await Filesystem.isFile(path)
-        if (!isFile.isValid) {
-            return isFile
-        }
-
-        const file = new File(path)
-        file.#pathChecked = true
-
-        return Results.ok(file)
-    }
-
-    async write(content: string | Buffer | Blob): Promise<NilResult> {
-        if (!this.#pathChecked) {
-            const exists = await Filesystem.exists(this.#path)
-            if (!exists) {
-                const createResult = await Filesystem.touch(this.#path)
-                if (!createResult.isValid) {
-                    return Results.wrap(createResult, "failed to create file")
-                }
-            } else {
-                const isFile = await Filesystem.isFile(this.#path)
-                if (!isFile.isValid) {
-                    return isFile
-                }
+export class FileWriter {
+    static async write(
+        path: string,
+        content: string | Buffer | Blob,
+    ): Promise<NilResult> {
+        const exists = await Filesystem.exists(path)
+        if (!exists) {
+            const createResult = await Filesystem.touch(path)
+            if (createResult.isError) {
+                return Results.wrap(createResult, "failed to create file")
             }
-
-            this.#pathChecked = true
+        } else {
+            const isFile = await Filesystem.isFile(path)
+            if (isFile.isError) {
+                return Results.wrap(isFile, "path is not a valid file")
+            }
         }
 
         const contentType = Types.getType(content)
-        if (!contentType.isValid) {
+        if (contentType.isError) {
             return Results.wrap(contentType, "failed to detect content type")
         }
 
@@ -70,7 +44,7 @@ export class File {
                 const conversionResult = await Results.ofPromise(
                     (content as Blob).arrayBuffer(),
                 )
-                if (!conversionResult.isValid) {
+                if (conversionResult.isError) {
                     return Results.wrap(
                         conversionResult,
                         "failed to convert blob to buffer",
@@ -80,7 +54,7 @@ export class File {
                 const bufferResult = Results.of(() =>
                     Buffer.from(conversionResult.value),
                 )
-                if (!bufferResult.isValid) {
+                if (bufferResult.isError) {
                     return Results.wrap(
                         bufferResult,
                         "failed to instantiate buffer",
@@ -93,11 +67,8 @@ export class File {
                 return Results.err("invalid content type provided")
         }
 
-        const writeResult = await Results.ofPromise(
-            fs.writeFile(this.#path, buffer),
-        )
-
-        if (!writeResult.isValid) {
+        const writeResult = await Results.ofPromise(fs.writeFile(path, buffer))
+        if (writeResult.isError) {
             return Results.wrap(writeResult, "failed to write content")
         }
 
@@ -106,28 +77,29 @@ export class File {
 
     /**
      * Write file to disk using web Readable stream.
-     *
      * @param {ReadableStream} inputStream - Type imported from "node:stream/web"
      */
-    async writeFromStream(inputStream: ReadableStream): Promise<NilResult> {
-        const writeStream = Results.of(() =>
-            fsSync.createWriteStream(this.#path),
-        )
-        if (!writeStream.isValid) {
+    static async writeFromStream(
+        path: string,
+        inputStream: ReadableStream,
+    ): Promise<NilResult> {
+        const writeStream = Results.of(() => fsSync.createWriteStream(path))
+        if (writeStream.isError) {
             return Results.wrap(writeStream, "failed to create write stream")
         }
 
         const outputStream = Results.of(() =>
             Readable.fromWeb(inputStream).pipe(writeStream.value),
         )
-        if (!outputStream.isValid) {
+        if (outputStream.isError) {
             return Results.wrap(outputStream, "failed to create output stream")
         }
 
         const finalResult = await Results.ofPromise(
             finished(outputStream.value),
         )
-        if (!finalResult.isValid) {
+
+        if (finalResult.isError) {
             return Results.wrap(finalResult, "stream completion failed")
         }
 

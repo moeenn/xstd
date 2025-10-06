@@ -61,7 +61,7 @@ export class Argparse {
 
     parse<T extends Record<string, MapValue> | object>(): Result<T> {
         const map = this.#parseRawArguments(this.#args)
-        if (!map.isValid) {
+        if (map.isError) {
             return map
         }
 
@@ -90,7 +90,7 @@ export class Argparse {
         for (let i = this.#argumentOffset; i < args.length; i++) {
             const arg = args[i]
             const parsed = this.#parseSingleArgument(arg)
-            if (!parsed.isValid) {
+            if (parsed.isError) {
                 return Results.wrap(parsed, "invalid argument(s)")
             }
 
@@ -117,7 +117,8 @@ export class Argparse {
             const relatedRegisteredOption = Options.of(
                 this.#options.find((opt) => opt.name === key),
             )
-            if (!relatedRegisteredOption.isPresent) {
+
+            if (relatedRegisteredOption.isAbsent) {
                 return Results.err("unknown argument: " + key)
             }
 
@@ -140,7 +141,7 @@ export class Argparse {
             this.#options.find((opt) => opt.name === key),
         )
 
-        if (!relatedRegisteredOption.isPresent) {
+        if (relatedRegisteredOption.isAbsent) {
             return Results.err("unknown argument: " + key)
         }
 
@@ -169,7 +170,7 @@ export class Argparse {
 
                     default:
                         const parsedInt = Results.of(() => parseInt(value))
-                        if (!parsedInt.isValid) {
+                        if (parsedInt.isError) {
                             return Results.err(
                                 `invalid decimal value provided for flag -${key}: ${value}`,
                             )
@@ -184,7 +185,7 @@ export class Argparse {
 
                     default:
                         const parsedFloat = Results.of(() => parseFloat(value))
-                        if (!parsedFloat.isValid) {
+                        if (parsedFloat.isError) {
                             return Results.err(
                                 `invalid integer value provided for flag -${key}: ${value}`,
                             )
@@ -205,7 +206,7 @@ export class Argparse {
 
     #getHelp(): string {
         const builder = new StringBuilder()
-        if (this.#programDescription.isPresent) {
+        if (!this.#programDescription.isAbsent) {
             builder.append(this.#programDescription.value + "\n")
         }
 

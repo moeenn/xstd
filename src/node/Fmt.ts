@@ -1,40 +1,39 @@
 import { styleText } from "node:util"
 import process from "node:process"
-import type { Stringable } from "./Print.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
 
+type Stringable = {
+    toString(): string
+}
+
+function buildString(message: string, ...args: Stringable[]): string {
+    const builder = new StringBuilder()
+    builder.append(message)
+    for (const arg of args) {
+        builder.append(" " + arg.toString())
+    }
+
+    return builder.toString()
+}
+
 function print(message: string, ...args: Stringable[]): void {
-    const builder = new StringBuilder()
-    builder.append(message)
-    for (const arg of args) {
-        builder.append(" " + arg.toString())
-    }
-
-    process.stdout.write(builder.toString() + "\n")
+    const s = buildString(message, args)
+    process.stdout.write(s + "\n")
 }
 
-function warn(message: string, ...args: Stringable[]): void {
-    const builder = new StringBuilder()
-    builder.append(message)
-    for (const arg of args) {
-        builder.append(" " + arg.toString())
+type Color = "red" | "yellow" | "green" | "blue"
+
+function createFn(color: Color) {
+    return (message: string, ...args: Stringable[]): void => {
+        const s = buildString(message, args)
+        process.stdout.write(styleText(color, s + "\n"))
     }
-
-    process.stdout.write(styleText("yellow", builder.toString()) + "\n")
-}
-
-function error(message: string, ...args: Stringable[]): void {
-    const builder = new StringBuilder()
-    builder.append(message)
-    for (const arg of args) {
-        builder.append(" " + arg.toString())
-    }
-
-    process.stderr.write(styleText("red", builder.toString()) + "\n")
 }
 
 export const fmt = {
     print,
-    warn,
-    error,
+    info: createFn("blue"),
+    success: createFn("green"),
+    warn: createFn("yellow"),
+    error: createFn("red"),
 } as const

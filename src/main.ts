@@ -1,22 +1,15 @@
-import { Argparse } from "./node/Argparse.js"
-import process from "node:process"
+import { Results, type NilResult } from "./core/Result.js"
+import { fmt } from "./node/Fmt.js"
 
-function main() {
-    const parser = new Argparse(process.argv, [
-        {
-            name: "url",
-            kind: "string",
-            description: "URL of the page to scrape",
-        },
-    ])
+async function run(): Promise<NilResult> {
+    return Results.nil()
+}
 
-    const parsedArgs = parser.parse()
-    if (!parsedArgs.isValid) {
-        console.error("error: " + parsedArgs.error)
-        return
+async function main() {
+    const err = await run()
+    if (err.isError) {
+        fmt.error("error: " + err.error)
     }
-
-    console.log(parsedArgs.value)
 }
 
 main()
