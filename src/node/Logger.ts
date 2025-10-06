@@ -1,5 +1,4 @@
 import { DateTimeFormatter, Format } from "#src/core/DateTimeFormatter.js"
-import { Options } from "#src/core/Option.js"
 import { Results, type Result } from "#src/core/Result.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
 import { Env } from "./Env.js"
@@ -16,7 +15,7 @@ export class LogLevel {
     static fromEnv(key: string = "LOG_LEVEL", env?: Env): Result<LogLevel> {
         const levels = [LogLevel.#info, LogLevel.Warn, LogLevel.Error]
         if (!env) {
-            env = new Env()
+            env = new Env(process.env)
         }
 
         const envValue = env.readString(key)
@@ -24,16 +23,14 @@ export class LogLevel {
             return envValue
         }
 
-        const foundLevel = Options.of(
-            levels.find((level) => level.value === envValue.value),
-        )
-        if (foundLevel.isAbsent) {
+        const foundLevel = levels.find((level) => level.value === envValue.value)
+        if (!foundLevel) {
             return Results.err(
                 `unknown value for environment variable ${key}: ${envValue.value}`,
             )
         }
 
-        return Options.toResult(foundLevel)
+        return Results.ok(foundLevel)
     }
 
     static get Info() {

@@ -2,7 +2,7 @@ import path from "node:path"
 import process from "node:process"
 import { Pair } from "#src/core/Pair.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
-import { type Option, Options } from "#src/core/Option.js"
+import { type Option } from "#src/core/Option.js"
 import { Results, type Result } from "#src/core/Result.js"
 
 type CliOptionsBase = {
@@ -30,7 +30,7 @@ export class Argparse {
     #programDescription: Option<string>
 
     constructor(args: string[], cliOptions: CliOption[], argumentOffset = 2) {
-        this.#programDescription = Options.none()
+        this.#programDescription = null
         this.#options = [
             {
                 name: "help",
@@ -52,7 +52,7 @@ export class Argparse {
     }
 
     setProgramDescription(description: string) {
-        this.#programDescription = Options.some(description)
+        this.#programDescription = description
     }
 
     get scriptName(): string {
@@ -114,15 +114,13 @@ export class Argparse {
         // parse flags provided without values.
         if (!arg.includes("=")) {
             const key = arg.slice(1)
-            const relatedRegisteredOption = Options.of(
-                this.#options.find((opt) => opt.name === key),
-            )
+            const relatedRegisteredOption = this.#options.find((opt) => opt.name === key)
 
-            if (relatedRegisteredOption.isAbsent) {
+            if (!relatedRegisteredOption) {
                 return Results.err("unknown argument: " + key)
             }
 
-            if (relatedRegisteredOption.value.kind === "boolean") {
+            if (relatedRegisteredOption.kind === "boolean") {
                 return Results.ok(new Pair(key, true))
             }
 
@@ -137,15 +135,13 @@ export class Argparse {
         }
 
         const [key, value] = pieces
-        const relatedRegisteredOption = Options.of(
-            this.#options.find((opt) => opt.name === key),
-        )
+        const relatedRegisteredOption = this.#options.find((opt) => opt.name === key)
 
-        if (relatedRegisteredOption.isAbsent) {
+        if (!relatedRegisteredOption) {
             return Results.err("unknown argument: " + key)
         }
 
-        switch (relatedRegisteredOption.value.kind) {
+        switch (relatedRegisteredOption.kind) {
             case "boolean":
                 switch (value.toLowerCase()) {
                     case "true":
@@ -206,8 +202,8 @@ export class Argparse {
 
     #getHelp(): string {
         const builder = new StringBuilder()
-        if (!this.#programDescription.isAbsent) {
-            builder.append(this.#programDescription.value + "\n")
+        if (this.#programDescription) {
+            builder.append(this.#programDescription + "\n")
         }
 
         builder.append(`usage: ${this.#scriptName} [argument=value]\n`)

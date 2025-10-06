@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
-import { type Option, Options } from "../core/Option.js"
+import { type Option } from "../core/Option.js"
 import { Results, type Result } from "#src/core/Result.js"
 
 type StatusCallback = () => void
@@ -66,12 +66,12 @@ export class ExecutorService<T> {
     #getNextFuture(): Option<Future<T>> {
         for (const future of this.#futures) {
             if (future.state.status === "pending") {
-                return Options.some(future)
+                return future
             }
         }
 
         this.#checkDoneStatus()
-        return Options.none()
+        return null
     }
 
     async #checkDoneStatus() {
@@ -97,8 +97,8 @@ export class ExecutorService<T> {
         const future = new Future(callback)
         future.onComplete(() => {
             const nextFuture = this.#getNextFuture()
-            if (!nextFuture.isAbsent) {
-                nextFuture.value.run()
+            if (nextFuture) {
+                nextFuture.run()
             }
         })
 

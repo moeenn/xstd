@@ -1,5 +1,5 @@
 import { datePlaceholders, type DatePlaceholder } from "./DatePlaceholder.js"
-import { Options, type Option } from "./Option.js"
+import { type Option } from "./Option.js"
 import { Results, type Result } from "./Result.js"
 
 export const Format = {
@@ -24,11 +24,11 @@ export class DateTimeFormatter {
     static findPlaceholder(placeholder: string): Option<DatePlaceholder> {
         for (const p of datePlaceholders) {
             if (p.placeholders.includes(placeholder)) {
-                return Options.some(p)
+                return p
             }
         }
 
-        return Options.none()
+        return null
     }
 
     static format(date: Date, format: DateFormat): Result<string> {
@@ -42,11 +42,12 @@ export class DateTimeFormatter {
         for (const placeholder of placeholdersSet) {
             const foundDatePlaceholder =
                 DateTimeFormatter.findPlaceholder(placeholder)
-            if (foundDatePlaceholder.isAbsent) {
+
+            if (!foundDatePlaceholder) {
                 return Results.err(`unknown placeholder: ${placeholder}`)
             }
 
-            const value = foundDatePlaceholder.value.format(date)
+            const value = foundDatePlaceholder.format(date)
             output = output.replaceAll(placeholder, value)
         }
 

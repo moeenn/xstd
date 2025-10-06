@@ -1,5 +1,5 @@
 import type { AbstractLogger } from "#src/node/Logger.js"
-import { Options, type Option } from "./Option.js"
+import { type Option } from "./Option.js"
 import { Results, type NilResult, type Result } from "./Result.js"
 import { type ReadableStream } from "node:stream/web"
 
@@ -67,10 +67,10 @@ export class HttpRequest {
     constructor(url: URL) {
         this.url = url
         this.#method = "GET"
-        this.#body = Options.none()
+        this.#body = null
         this.#responseType = ResponseType.json
         this.#timeout = 10_000 // 10 seconds.
-        this.#retry = Options.none()
+        this.#retry = null
         this.#headers = new Headers({
             Accept: "application/json",
         })
@@ -131,7 +131,7 @@ export class HttpRequest {
     }
 
     setBody(body: RequestBody) {
-        this.#body = Options.some(body)
+        this.#body = body
         const isFormData = body instanceof FormData
         if (!isFormData) {
             // in case FormData, this header is set automatically.
@@ -142,8 +142,7 @@ export class HttpRequest {
     }
 
     setRetry(args: { maxRetries: number, retryStatusCode?: number }) {
-        const retry = new RequestRetry(args.maxRetries, args.retryStatusCode)
-        this.#retry = Options.some(retry)
+        this.#retry = new RequestRetry(args.maxRetries, args.retryStatusCode)
         return this
     }
 }
@@ -168,12 +167,12 @@ export class HttpClient {
     }
 
     async #sendRequest(request: HttpRequest): Promise<{ result: Result<HttpResponse>, retry: boolean }> {
-        let body: Option<string | FormData> = Options.none()
+        let body: Option<string | FormData> = null
 
-        if (!request.body.isAbsent) {
-            const rawBody = request.body.value
+        if (request.body) {
+            const rawBody = request.body
             if (rawBody instanceof FormData) {
-                body = Options.some(rawBody)
+                body = rawBody
             } else {
                 const encoded = Results.of(() => JSON.stringify(rawBody))
                 if (encoded.isError) {
@@ -186,7 +185,7 @@ export class HttpClient {
                     }
                 }
 
-                body = Options.some(encoded.value)
+                body = encoded.value
             }
         }
 
@@ -195,7 +194,7 @@ export class HttpClient {
                 method: request.method,
                 headers: request.headers,
                 signal: AbortSignal.timeout(request.timeout),
-                body: Options.orElse(body, undefined),
+                body: body ?? undefined,
             }),
         )
 
@@ -204,7 +203,7 @@ export class HttpClient {
         }
 
         const statusCode = res.value.status
-        if (!request.retry.isAbsent && statusCode == request.retry.value.retryStatusCode) {
+        if (request.retry && statusCode == request.retry.retryStatusCode) {
             return {
                 result: Results.err(`retry status code ${statusCode} received`),
                 retry: true,
@@ -283,7 +282,7 @@ export class HttpClient {
     }
 
     async send(request: HttpRequest): Promise<Result<HttpResponse>> {
-        if (request.retry.isAbsent) {
+        if (!request.retry) {
             const result = await this.#sendRequest(request)
             return result.result
         }
@@ -296,14 +295,14 @@ export class HttpClient {
         this.#logger?.info("retrying request", {
             url: request.url,
             method: request.method,
-            retryCount: request.retry.value.retries + 1,
+            retryCount: request.retry.retries + 1,
         })
 
-        const delay = request.retry.value.calculateRetryDelay()
+        const delay = request.retry.calculateRetryDelay()
 
         // sleep.
         await new Promise(resolve => setTimeout(resolve, delay))
-        const incrementRes = request.retry.value.incrementRetryCount()
+        const incrementRes = request.retry.incrementRetryCount()
         if (incrementRes.isError) {
             return incrementRes
         }
@@ -318,11 +317,11 @@ export class HttpStreamClient {
     async stream(
         request: HttpRequest,
     ): Promise<Result<ReadableStream<unknown>>> {
-        let body: Option<string | FormData> = Options.none()
-        if (!request.body.isAbsent) {
-            const rawBody = request.body.value
+        let body: Option<string | FormData> = null
+        if (request.body) {
+            const rawBody = request.body
             if (rawBody instanceof FormData) {
-                body = Options.some(rawBody)
+                body = rawBody
             } else {
                 const encoded = Results.of(() => JSON.stringify(rawBody))
                 if (encoded.isError) {
@@ -332,7 +331,7 @@ export class HttpStreamClient {
                     )
                 }
 
-                body = Options.some(encoded.value)
+                body = encoded.value
             }
         }
 
@@ -341,7 +340,7 @@ export class HttpStreamClient {
                 method: request.method,
                 headers: request.headers,
                 signal: AbortSignal.timeout(request.timeout),
-                body: Options.orElse(body, undefined),
+                body: body ?? undefined,
             }),
         )
 

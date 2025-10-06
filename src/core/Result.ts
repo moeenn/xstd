@@ -1,4 +1,4 @@
-import { Options, type Option } from "./Option.js"
+import { type Option } from "./Option.js"
 
 type OkVariant<T> = { readonly isError: false; value: T }
 type ErrVariant = { readonly isError: true; error: string }
@@ -23,7 +23,7 @@ function wrap(result: ErrVariant, prefix: string): ErrVariant {
 }
 
 const toOption = <T>(result: Result<T>): Option<T> =>
-    result.isError ? Options.none() : Options.some(result.value)
+    result.isError ? null : result.value
 
 function of<T>(fn: () => T): Result<T> {
     try {
