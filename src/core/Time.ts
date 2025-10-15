@@ -1,4 +1,4 @@
-import { Results, type Result } from "./Result.js"
+import { Results, type Result, type Option } from "./Monads.js"
 
 export class Time {
     readonly #hours: number

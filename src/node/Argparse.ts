@@ -2,8 +2,7 @@ import path from "node:path"
 import process from "node:process"
 import { Pair } from "#src/core/Pair.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
-import { type Option } from "#src/core/Option.js"
-import { Results, type Result } from "#src/core/Result.js"
+import { Results, type Result, type Option } from "#src/core/Monads.js"
 
 type CliOptionsBase = {
     readonly name: string

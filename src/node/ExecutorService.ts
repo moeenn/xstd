@@ -1,7 +1,6 @@
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
-import { type Option } from "../core/Option.js"
-import { Results, type Result } from "#src/core/Result.js"
+import { Results, type Result, type Option } from "#src/core/Monads.js"
 
 type StatusCallback = () => void
 type AsyncCallback<T> = () => Promise<T>
@@ -30,7 +29,7 @@ class Future<T> {
         this.state = { status: "inprogress" }
         const result = await Results.ofPromise(this.#callback())
         if (result.isError) {
-            this.state = { status: "errored", error: result.error }
+            this.state = { status: "errored", error: result.error.message }
             return Results.err(result.error)
         }
 

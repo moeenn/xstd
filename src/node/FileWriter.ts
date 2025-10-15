@@ -1,6 +1,6 @@
 import fs from "node:fs/promises"
 import fsSync from "node:fs"
-import { Results, type NilResult } from "#src/core/Result.js"
+import { Results, type NilResult } from "#src/core/Monads.js"
 import { Filesystem } from "./Filesystem.js"
 import { Type, Types } from "../core/Types.js"
 import { type ReadableStream } from "node:stream/web"

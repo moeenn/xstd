@@ -1,6 +1,5 @@
 import { datePlaceholders, type DatePlaceholder } from "./DatePlaceholder.js"
-import { type Option } from "./Option.js"
-import { Results, type Result } from "./Result.js"
+import { Results, type Result, type Option } from "./Monads.js"
 
 export const Format = {
     full: "%Y-%m-%d %H:%M",

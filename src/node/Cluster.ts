@@ -1,7 +1,7 @@
 import cluster from "node:cluster"
 import os from "node:os"
 import type { AbstractLogger } from "./Logger.js"
-import { Results } from "#src/core/Result.js"
+import { Results } from "#src/core/Monads.js"
 
 export type ClusterWorkerCount = number | "MAX"
 

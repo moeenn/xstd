@@ -1,5 +1,5 @@
 import { DateTimeFormatter, Format } from "#src/core/DateTimeFormatter.js"
-import { Results, type Result } from "#src/core/Result.js"
+import { Results, type Result } from "#src/core/Monads.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
 import { Env } from "./Env.js"
 import { ConsoleWriter, type Writer } from "./Writer.js"
@@ -107,7 +107,7 @@ export abstract class AbstractLogger {
                     details,
                 )
                 if (logEntry.isError) {
-                    this.error(logEntry.error)
+                    this.error(logEntry.error.message)
                     return
                 }
 

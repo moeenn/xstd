@@ -1,4 +1,4 @@
-import { Results, type NilResult } from "./core/Result.js"
+import { Results, type NilResult } from "./core/Monads.js"
 import { fmt } from "./node/Fmt.js"
 
 async function run(): Promise<NilResult> {

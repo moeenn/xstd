@@ -1,5 +1,5 @@
 import fs from "node:fs/promises"
-import { Results, type NilResult, type Result } from "#src/core/Result.js"
+import { Results, type NilResult, type Result } from "#src/core/Monads.js"
 
 async function exists(path: string): Promise<boolean> {
     const output = await Results.ofPromise(fs.access(path, fs.constants.F_OK))

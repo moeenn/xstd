@@ -1,6 +1,5 @@
 import type { AbstractLogger } from "#src/node/Logger.js"
-import { type Option } from "./Option.js"
-import { Results, type NilResult, type Result } from "./Result.js"
+import { Results, type NilResult, type Result, type Option } from "./Monads.js"
 import { type ReadableStream } from "node:stream/web"
 
 type RequestBody = Record<string, unknown> | FormData

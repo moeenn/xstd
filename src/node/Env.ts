@@ -1,4 +1,4 @@
-import { Results, type Result } from "#src/core/Result.js"
+import { Results, type Result } from "#src/core/Monads.js"
 
 export class Env {
     #args: Record<string, string>
@@ -29,7 +29,7 @@ export class Env {
     mustReadString(name: string, fallback?: string): string {
         const result = this.readString(name, fallback)
         if (result.isError) {
-            throw new Error(result.error)
+            throw result.error
         }
         return result.value
     }
@@ -53,7 +53,7 @@ export class Env {
     mustReadNumber(name: string, fallback?: number): number {
         const result = this.readNumber(name, fallback)
         if (result.isError) {
-            throw new Error(result.error)
+            throw result.error
         }
         return result.value
     }

@@ -113,7 +113,7 @@ describe("argparse usage tests", () => {
         const parsedArgs = parser.parse()
         assert.equal(parsedArgs.isError, true)
         assert(parsedArgs.error != null)
-        assert(parsedArgs.error.includes("unknown"))
+        assert(parsedArgs.error.message.includes("unknown"))
     })
 
     // TODO: test returned errors.
