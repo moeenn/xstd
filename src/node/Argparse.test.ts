@@ -32,9 +32,8 @@ describe("argparse usage tests", () => {
 
         parser.setProgramDescription("Batch download images from websites.")
         const args = parser.parse<CommandLineArgs>()
-        assert(!args.isError)
-        assert.equal(args.value.url, "site.com")
-        assert.equal(args.value.outputFile, "report.json")
+        assert.equal(args.url, "site.com")
+        assert.equal(args.outputFile, "report.json")
         assert.equal(parser.scriptName, "script.js")
     })
 
@@ -75,10 +74,9 @@ describe("argparse usage tests", () => {
         const argsOffet = 3
         const parser = new Argparse(inputArgs, cliOptions, argsOffet)
         const parsedArgs = parser.parse<CommandLineArgs>()
-        assert(!parsedArgs.isError)
-        assert(parsedArgs.value.version)
-        assert.equal(parsedArgs.value.force, false)
-        assert(parsedArgs.value.verbose)
+        assert(parsedArgs.version)
+        assert.equal(parsedArgs.force, false)
+        assert(parsedArgs.verbose)
     })
 
     it("optional arguments", () => {
@@ -96,8 +94,7 @@ describe("argparse usage tests", () => {
             },
         ])
 
-        const parsedArgs = parser.parse<CommandLineArgs>()
-        assert.equal(parsedArgs.isError, false)
+        assert.doesNotThrow(() => parser.parse<CommandLineArgs>())
     })
 
     it("invalid flag format", () => {
@@ -110,10 +107,8 @@ describe("argparse usage tests", () => {
             },
         ])
 
-        const parsedArgs = parser.parse()
-        assert.equal(parsedArgs.isError, true)
-        assert(parsedArgs.error != null)
-        assert(parsedArgs.error.message.includes("unknown"))
+        const parseFunc = () => parser.parse()
+        assert.throws(parseFunc)
     })
 
     // TODO: test returned errors.

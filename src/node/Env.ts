@@ -1,4 +1,4 @@
-import { Results, type Result } from "#src/core/Monads.js"
+import { Results } from "#src/core/Monads.js"
 
 export class Env {
     #args: Record<string, string>
@@ -13,48 +13,29 @@ export class Env {
         this.#args = converted
     }
 
-    readString(name: string, fallback?: string): Result<string> {
+    readString(name: string, fallback?: string): string {
         const value = this.#args[name]
 
         if (value == undefined) {
             if (fallback != undefined) {
-                return Results.ok(fallback.trim())
+                return fallback
             }
-            return Results.err(`missing environment variable: ${name}`)
+            throw new Error(`missing environment variable: ${name}`)
         }
 
-        return Results.ok(value.trim())
+        return value.trim()
     }
 
-    mustReadString(name: string, fallback?: string): string {
-        const result = this.readString(name, fallback)
-        if (result.isError) {
-            throw result.error
-        }
-        return result.value
-    }
-
-    readNumber(name: string, fallback?: number): Result<number> {
+    readNumber(name: string, fallback?: number): number {
         const rawValue = this.readString(name, String(fallback))
-        if (rawValue.isError) {
-            return rawValue
-        }
 
-        const parsedValue = Results.of(() => parseFloat(rawValue.value))
+        const parsedValue = Results.of(() => parseFloat(rawValue))
         if (parsedValue.isError) {
-            return Results.err(
+            throw new Error(
                 `environment variable ${name} is not a valid number`,
             )
         }
 
-        return parsedValue
-    }
-
-    mustReadNumber(name: string, fallback?: number): number {
-        const result = this.readNumber(name, fallback)
-        if (result.isError) {
-            throw result.error
-        }
-        return result.value
+        return parsedValue.value
     }
 }

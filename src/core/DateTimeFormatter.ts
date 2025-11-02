@@ -1,5 +1,5 @@
 import { datePlaceholders, type DatePlaceholder } from "./DatePlaceholder.js"
-import { Results, type Result, type Option } from "./Monads.js"
+import { type Option } from "./Monads.js"
 
 export const Format = {
     full: "%Y-%m-%d %H:%M",
@@ -30,10 +30,10 @@ export class DateTimeFormatter {
         return null
     }
 
-    static format(date: Date, format: DateFormat): Result<string> {
+    static format(date: Date, format: DateFormat): string {
         const placeholdersSet = DateTimeFormatter.extractPlaceholders(format)
         if (placeholdersSet.size === 0) {
-            return Results.err("no placeholders found in format string")
+            throw new Error("no placeholders found in format string")
         }
 
         // create a copy so input format string is not mutated.
@@ -43,13 +43,13 @@ export class DateTimeFormatter {
                 DateTimeFormatter.findPlaceholder(placeholder)
 
             if (!foundDatePlaceholder) {
-                return Results.err(`unknown placeholder: ${placeholder}`)
+                throw new Error(`unknown placeholder: ${placeholder}`)
             }
 
             const value = foundDatePlaceholder.format(date)
             output = output.replaceAll(placeholder, value)
         }
 
-        return Results.ok(output)
+        return output
     }
 }

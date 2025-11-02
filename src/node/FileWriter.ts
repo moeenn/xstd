@@ -1,7 +1,7 @@
 import fs from "node:fs/promises"
 import fsSync from "node:fs"
-import { Results, type NilResult } from "#src/core/Monads.js"
-import { Filesystem } from "./Filesystem.js"
+import { Results } from "#src/core/Monads.js"
+import { Filesystem, FilesystemError } from "./Filesystem.js"
 import { Type, Types } from "../core/Types.js"
 import { type ReadableStream } from "node:stream/web"
 import { Readable } from "node:stream"
@@ -11,23 +11,32 @@ export class FileWriter {
     static async write(
         path: string,
         content: string | Buffer | Blob,
-    ): Promise<NilResult> {
+    ): Promise<void> {
         const exists = await Filesystem.exists(path)
         if (!exists) {
-            const createResult = await Filesystem.touch(path)
+            const createResult = await Results.ofPromise(Filesystem.touch(path))
             if (createResult.isError) {
-                return Results.wrap(createResult, "failed to create file")
+                throw new FilesystemError(
+                    "failed to create file",
+                    createResult.error,
+                )
             }
         } else {
-            const isFile = await Filesystem.isFile(path)
+            const isFile = await Results.ofPromise(Filesystem.isFile(path))
             if (isFile.isError) {
-                return Results.wrap(isFile, "path is not a valid file")
+                throw new FilesystemError(
+                    "path is not a valid file",
+                    isFile.error,
+                )
             }
         }
 
         const contentType = Types.getType(content)
         if (contentType.isError) {
-            return Results.wrap(contentType, "failed to detect content type")
+            throw new FilesystemError(
+                "failed to detect content type",
+                contentType.error,
+            )
         }
 
         let buffer: Buffer
@@ -45,9 +54,9 @@ export class FileWriter {
                     (content as Blob).arrayBuffer(),
                 )
                 if (conversionResult.isError) {
-                    return Results.wrap(
-                        conversionResult,
+                    throw new FilesystemError(
                         "failed to convert blob to buffer",
+                        conversionResult.error,
                     )
                 }
 
@@ -55,24 +64,25 @@ export class FileWriter {
                     Buffer.from(conversionResult.value),
                 )
                 if (bufferResult.isError) {
-                    return Results.wrap(
-                        bufferResult,
+                    throw new FilesystemError(
                         "failed to instantiate buffer",
+                        bufferResult.error,
                     )
                 }
                 buffer = bufferResult.value
                 break
 
             default:
-                return Results.err("invalid content type provided")
+                throw new FilesystemError("invalid content type provided")
         }
 
         const writeResult = await Results.ofPromise(fs.writeFile(path, buffer))
         if (writeResult.isError) {
-            return Results.wrap(writeResult, "failed to write content")
+            throw new FilesystemError(
+                "failed to write content",
+                writeResult.error,
+            )
         }
-
-        return Results.nil()
     }
 
     /**
@@ -82,17 +92,23 @@ export class FileWriter {
     static async writeFromStream(
         path: string,
         inputStream: ReadableStream,
-    ): Promise<NilResult> {
+    ): Promise<void> {
         const writeStream = Results.of(() => fsSync.createWriteStream(path))
         if (writeStream.isError) {
-            return Results.wrap(writeStream, "failed to create write stream")
+            throw new FilesystemError(
+                "failed to create write stream",
+                writeStream.error,
+            )
         }
 
         const outputStream = Results.of(() =>
             Readable.fromWeb(inputStream).pipe(writeStream.value),
         )
         if (outputStream.isError) {
-            return Results.wrap(outputStream, "failed to create output stream")
+            throw new FilesystemError(
+                "failed to create output stream",
+                outputStream.error,
+            )
         }
 
         const finalResult = await Results.ofPromise(
@@ -100,9 +116,10 @@ export class FileWriter {
         )
 
         if (finalResult.isError) {
-            return Results.wrap(finalResult, "stream completion failed")
+            throw new FilesystemError(
+                "stream completion failed",
+                finalResult.error,
+            )
         }
-
-        return Results.nil()
     }
 }

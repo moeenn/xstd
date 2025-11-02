@@ -9,5 +9,3 @@ export class ConsoleWriter implements Writer {
         console.log(data)
     }
 }
-
-// TODO: implement file writer class.

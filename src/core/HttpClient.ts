@@ -1,5 +1,5 @@
 import type { AbstractLogger } from "#src/node/Logger.js"
-import { Results, type NilResult, type Result, type Option } from "./Monads.js"
+import { Results, type Option, type Result } from "./Monads.js"
 import { type ReadableStream } from "node:stream/web"
 
 type RequestBody = Record<string, unknown> | FormData
@@ -17,6 +17,12 @@ const ResponseType: Record<HttpResponseType, HttpResponseType> = {
     text: "text",
     json: "json",
     blob: "blob",
+}
+
+class RetriesExceededError extends Error {
+    constructor(maxRetries: number) {
+        super(`max number of retries (${maxRetries}) exceeded`)
+    }
 }
 
 class RequestRetry {
@@ -38,18 +44,18 @@ class RequestRetry {
         return this.#retryStatusCode
     }
 
-    incrementRetryCount(): NilResult {
+    incrementRetryCount() {
         if (this.#retries >= this.#maxRetries - 1) {
-            return Results.err(`max number of retries (${this.#maxRetries}) exceeded`)
+            throw new RetriesExceededError(this.#maxRetries)
         }
 
         this.#retries++
-        return Results.nil()
+        return
     }
 
     calculateRetryDelay(): number {
         const delay = Math.pow(2, this.#retries)
-        const jitter = (delay / 3) + Math.random() * (delay / 3)
+        const jitter = delay / 3 + Math.random() * (delay / 3)
         return (delay + jitter) * 1_000
     }
 }
@@ -140,7 +146,7 @@ export class HttpRequest {
         return this
     }
 
-    setRetry(args: { maxRetries: number, retryStatusCode?: number }) {
+    setRetry(args: { maxRetries: number; retryStatusCode?: number }) {
         this.#retry = new RequestRetry(args.maxRetries, args.retryStatusCode)
         return this
     }
@@ -165,7 +171,9 @@ export class HttpClient {
         this.#logger = logger
     }
 
-    async #sendRequest(request: HttpRequest): Promise<{ result: Result<HttpResponse>, retry: boolean }> {
+    async #sendRequest(
+        request: HttpRequest,
+    ): Promise<{ response: Result<HttpResponse>; retry: boolean }> {
         let body: Option<string | FormData> = null
 
         if (request.body) {
@@ -176,7 +184,7 @@ export class HttpClient {
                 const encoded = Results.of(() => JSON.stringify(rawBody))
                 if (encoded.isError) {
                     return {
-                        result: Results.wrap(
+                        response: Results.wrap(
                             encoded,
                             "failed to json encode request body",
                         ),
@@ -198,13 +206,18 @@ export class HttpClient {
         )
 
         if (res.isError) {
-            return { result: Results.wrap(res, "request failed"), retry: true }
+            return {
+                response: Results.wrap(res, "request failed"),
+                retry: true,
+            }
         }
 
         const statusCode = res.value.status
         if (request.retry && statusCode == request.retry.retryStatusCode) {
             return {
-                result: Results.err(`retry status code ${statusCode} received`),
+                response: Results.err(
+                    `retry status code ${statusCode} received`,
+                ),
                 retry: true,
             }
         }
@@ -214,16 +227,20 @@ export class HttpClient {
                 const data = await Results.ofPromise(res.value.text())
                 if (data.isError) {
                     return {
-                        result: Results.wrap(
+                        response: Results.wrap(
                             data,
                             "failed to read response data as text",
                         ),
-                        retry: false
+                        retry: false,
                     }
                 }
                 return {
-                    result: Results.ok(
-                        new HttpResponse(statusCode, ResponseType.text, data.value),
+                    response: Results.ok(
+                        new HttpResponse(
+                            statusCode,
+                            ResponseType.text,
+                            data.value,
+                        ),
                     ),
                     retry: false,
                 }
@@ -233,7 +250,7 @@ export class HttpClient {
                 const data = await Results.ofPromise(res.value.blob())
                 if (data.isError) {
                     return {
-                        result: Results.wrap(
+                        response: Results.wrap(
                             data,
                             "failed to read response data as binay blob",
                         ),
@@ -241,10 +258,14 @@ export class HttpClient {
                     }
                 }
                 return {
-                    result: Results.ok(
-                        new HttpResponse(statusCode, ResponseType.blob, data.value),
+                    response: Results.ok(
+                        new HttpResponse(
+                            statusCode,
+                            ResponseType.blob,
+                            data.value,
+                        ),
                     ),
-                    retry: false
+                    retry: false,
                 }
             }
 
@@ -252,7 +273,7 @@ export class HttpClient {
                 const responseJson = await Results.ofPromise(res.value.json())
                 if (responseJson.isError) {
                     return {
-                        result: Results.wrap(
+                        response: Results.wrap(
                             responseJson,
                             "failed to parse response as json",
                         ),
@@ -262,7 +283,7 @@ export class HttpClient {
 
                 const data = responseJson.value
                 return {
-                    result: Results.ok(
+                    response: Results.ok(
                         new HttpResponse(statusCode, ResponseType.json, data),
                     ),
                     retry: false,
@@ -271,24 +292,30 @@ export class HttpClient {
 
             default: {
                 return {
-                    result: Results.err(
+                    response: Results.err(
                         "unexpected response type: " + request.responseType,
                     ),
-                    retry: false
+                    retry: false,
                 }
             }
         }
     }
 
-    async send(request: HttpRequest): Promise<Result<HttpResponse>> {
+    async send(request: HttpRequest): Promise<HttpResponse> {
         if (!request.retry) {
-            const result = await this.#sendRequest(request)
-            return result.result
+            const resp = await this.#sendRequest(request)
+            if (resp.response.isError) {
+                throw resp.response.error
+            }
+            return resp.response.value
         }
 
         const result = await this.#sendRequest(request)
         if (!result.retry) {
-            return result.result
+            if (result.response.isError) {
+                throw result.response.error
+            }
+            return result.response.value
         }
 
         this.#logger?.info("retrying request", {
@@ -300,11 +327,8 @@ export class HttpClient {
         const delay = request.retry.calculateRetryDelay()
 
         // sleep.
-        await new Promise(resolve => setTimeout(resolve, delay))
-        const incrementRes = request.retry.incrementRetryCount()
-        if (incrementRes.isError) {
-            return incrementRes
-        }
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        request.retry.incrementRetryCount()
 
         // call self recursively.
         return this.send(request)

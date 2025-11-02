@@ -84,10 +84,13 @@ test("missing argument", () => {
 })
 
 class Entity {
-    constructor(
-        public id: number,
-        public fullName: string,
-    ) { }
+    id: number
+    fullName: string
+
+    constructor(id: number, fullName: string) {
+        this.id = id
+        this.fullName = fullName
+    }
 }
 
 test("camelCase args", () => {

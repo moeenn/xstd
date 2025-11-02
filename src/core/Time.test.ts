@@ -4,5 +4,5 @@ import { Time } from "./Time.js"
 
 test("parse valid time", () => {
     const midnight = Time.of(12, 0)
-    assert(!midnight.isError)
+    assert(midnight.to24HourString(), "12:00")
 })

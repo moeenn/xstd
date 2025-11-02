@@ -1,4 +1,4 @@
-type Option<T> = T | null | undefined
+import type { Option } from "./Monads.js"
 
 class Node<T> {
     data: T

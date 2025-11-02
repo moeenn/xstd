@@ -1,4 +1,4 @@
-import { Results, type Result, type Option } from "./Monads.js"
+import { Results } from "./Monads.js"
 
 export class Time {
     readonly #hours: number
@@ -9,33 +9,33 @@ export class Time {
         this.#minutes = minutes
     }
 
-    static of(hours: number, minutes: number): Result<Time> {
+    static of(hours: number, minutes: number): Time {
         if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-            return Results.err(`invalid time: ${hours}:${minutes}`)
+            throw new Error(`invalid time: ${hours}:${minutes}`)
         }
-        return Results.ok(new Time(hours, minutes))
+        return new Time(hours, minutes)
     }
 
-    public static from24HourString(input: string): Result<Time> {
+    public static from24HourString(input: string): Time {
         const [hours, minutes] = input.split(":")
         if (!hours || !minutes) {
-            return Results.err(`invalid time: ${input}`)
+            throw new Error(`invalid time: ${input}`)
         }
 
         const hoursAsNumber = Results.of(() => parseInt(hours))
         if (hoursAsNumber.isError) {
-            return Results.err(`invalid hours value: ${hours}`)
+            throw new Error(`invalid hours value: ${hours}`)
         }
 
         const minutesAsNumber = Results.of(() => parseInt(minutes))
         if (minutesAsNumber.isError) {
-            return Results.err(`invalid minutes value: ${minutes}`)
+            throw new Error(`invalid minutes value: ${minutes}`)
         }
 
-        return Results.ok(new Time(hoursAsNumber.value, minutesAsNumber.value))
+        return new Time(hoursAsNumber.value, minutesAsNumber.value)
     }
 
-    public static from12HourString(input: string): Result<Time> {
+    public static from12HourString(input: string): Time {
         const timeString = input.substring(0, input.length - 2).trim()
         const amPmString = input
             .substring(input.length - 2, input.length)
@@ -43,22 +43,22 @@ export class Time {
             .toLowerCase()
 
         if (!amPmString || !["am", "pm"].includes(amPmString)) {
-            return Results.err(`am/pm missing from 12-hour time`)
+            throw new Error(`am/pm missing from 12-hour time`)
         }
 
         const [hours, minutes] = timeString.split(":")
         if (!hours || !minutes) {
-            return Results.err(`missing hours or minutes`)
+            throw new Error(`missing hours or minutes`)
         }
 
         const hoursAsNumber = Results.of(() => parseInt(hours))
         if (hoursAsNumber.isError) {
-            return Results.err(`invalid hours value: ${hours}`)
+            throw new Error(`invalid hours value: ${hours}`)
         }
 
         const minutesAsNumber = Results.of(() => parseInt(minutes))
         if (minutesAsNumber.isError) {
-            return Results.err(`invalid minutes value: ${hours}`)
+            throw new Error(`invalid minutes value: ${hours}`)
         }
 
         const adjustedHours = ((): number => {
@@ -68,14 +68,14 @@ export class Time {
             return hoursAsNumber.value
         })()
 
-        return Results.ok(new Time(adjustedHours, minutesAsNumber.value))
+        return new Time(adjustedHours, minutesAsNumber.value)
     }
 
     private static zeroPad(n: number): string {
         return String(n).padStart(2, "0")
     }
 
-    public to24SHourString(): string {
+    public to24HourString(): string {
         return `${Time.zeroPad(this.#hours)}:${Time.zeroPad(this.#minutes)}`
     }
 

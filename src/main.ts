@@ -1,15 +1,7 @@
-import { Results, type NilResult } from "./core/Monads.js"
-import { fmt } from "./node/Fmt.js"
+import { entrypoint } from "./node/Entrypoint.js"
 
-async function run(): Promise<NilResult> {
-    return Results.nil()
+function main() {
+    console.log("Hello world")
 }
 
-async function main() {
-    const err = await run()
-    if (err.isError) {
-        fmt.error("error: " + err.error)
-    }
-}
-
-main()
+entrypoint(main)

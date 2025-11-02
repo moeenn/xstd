@@ -44,6 +44,7 @@ function isType(input: JsObject, targetType: KnownType): boolean {
     }
 }
 
+// TODO: consider if required.
 function getType(input: JsObject): Result<KnownType> {
     const typeName = input.constructor.name
     for (const knownType of Object.values(Type)) {

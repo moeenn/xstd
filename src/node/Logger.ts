@@ -12,25 +12,21 @@ export class LogLevel {
     static #warn = new LogLevel(1, "WARN")
     static #error = new LogLevel(2, "ERROR")
 
-    static fromEnv(key: string = "LOG_LEVEL", env?: Env): Result<LogLevel> {
+    static fromEnv(key: string = "LOG_LEVEL", env?: Env): LogLevel {
         const levels = [LogLevel.#info, LogLevel.Warn, LogLevel.Error]
         if (!env) {
             env = new Env(process.env)
         }
 
         const envValue = env.readString(key)
-        if (envValue.isError) {
-            return envValue
-        }
-
-        const foundLevel = levels.find((level) => level.value === envValue.value)
+        const foundLevel = levels.find((level) => level.value === envValue)
         if (!foundLevel) {
-            return Results.err(
-                `unknown value for environment variable ${key}: ${envValue.value}`,
+            throw new Error(
+                `unknown value for environment variable ${key}: ${envValue}`,
             )
         }
 
-        return Results.ok(foundLevel)
+        return foundLevel
     }
 
     static get Info() {
@@ -83,7 +79,9 @@ export abstract class AbstractLogger {
         message: string,
         details?: Record<string, unknown>,
     ): Result<LogEntry> {
-        const timestamp = DateTimeFormatter.format(new Date(), Format.full)
+        const timestamp = Results.of(() =>
+            DateTimeFormatter.format(new Date(), Format.full),
+        )
         if (timestamp.isError) {
             return Results.err(`failed to get timestamp: ` + timestamp.error)
         }

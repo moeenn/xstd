@@ -2,7 +2,7 @@ import path from "node:path"
 import process from "node:process"
 import { Pair } from "#src/core/Pair.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
-import { Results, type Result, type Option } from "#src/core/Monads.js"
+import { Results, type Option, type Result } from "#src/core/Monads.js"
 
 type CliOptionsBase = {
     readonly name: string
@@ -58,10 +58,10 @@ export class Argparse {
         return this.#scriptName
     }
 
-    parse<T extends Record<string, MapValue> | object>(): Result<T> {
+    parse<T extends Record<string, MapValue> | object>(): T {
         const map = this.#parseRawArguments(this.#args)
         if (map.isError) {
-            return map
+            throw map
         }
 
         this.#map = map.value
@@ -76,12 +76,12 @@ export class Argparse {
                 if (option.default != undefined) {
                     this.#map[option.name] = option.default
                 } else {
-                    return Results.err(`missing required flag: ${option.name}`)
+                    throw new Error(`missing required flag: ${option.name}`)
                 }
             }
         }
 
-        return Results.ok(this.#map as T)
+        return this.#map as T
     }
 
     #parseRawArguments(args: string[]): Result<Record<string, MapValue>> {
@@ -113,7 +113,9 @@ export class Argparse {
         // parse flags provided without values.
         if (!arg.includes("=")) {
             const key = arg.slice(1)
-            const relatedRegisteredOption = this.#options.find((opt) => opt.name === key)
+            const relatedRegisteredOption = this.#options.find(
+                (opt) => opt.name === key,
+            )
 
             if (!relatedRegisteredOption) {
                 return Results.err("unknown argument: " + key)
@@ -134,7 +136,9 @@ export class Argparse {
         }
 
         const [key, value] = pieces
-        const relatedRegisteredOption = this.#options.find((opt) => opt.name === key)
+        const relatedRegisteredOption = this.#options.find(
+            (opt) => opt.name === key,
+        )
 
         if (!relatedRegisteredOption) {
             return Results.err("unknown argument: " + key)

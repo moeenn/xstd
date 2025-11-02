@@ -1,79 +1,90 @@
 import fs from "node:fs/promises"
-import { Results, type NilResult, type Result } from "#src/core/Monads.js"
+import { Results, type Option } from "#src/core/Monads.js"
+
+export class FilesystemError extends Error {
+    details: Option<string> = null
+
+    constructor(message: string, details: Option<Error> = null) {
+        super(message)
+        this.details = details?.message ?? null
+    }
+}
 
 async function exists(path: string): Promise<boolean> {
     const output = await Results.ofPromise(fs.access(path, fs.constants.F_OK))
     return !output.isError
 }
 
-async function isDirectory(path: string): Promise<Result<boolean>> {
+async function isDirectory(path: string): Promise<boolean> {
     const output = await Results.ofPromise(fs.lstat(path))
     if (output.isError) {
-        return Results.wrap(output, "failed to get details of path")
+        throw new FilesystemError("failed to get details of path", output.error)
     }
 
     const isDir = Results.of(() => output.value.isDirectory())
     if (isDir.isError) {
-        return Results.wrap(isDir, "failed to check if path is a directory")
+        throw new FilesystemError(
+            "failed to check if path is a directory",
+            isDir.error,
+        )
     }
 
-    return Results.ok(isDir.value)
+    return isDir.value
 }
 
-async function isFile(path: string): Promise<Result<boolean>> {
+async function isFile(path: string): Promise<boolean> {
     const output = await Results.ofPromise(fs.lstat(path))
     if (output.isError) {
-        return Results.wrap(output, "failed to get details of path")
+        throw new FilesystemError("failed to get details of path", output.error)
     }
 
     const isFile = Results.of(() => output.value.isFile())
     if (isFile.isError) {
-        return Results.wrap(isFile, "failed to check if path is a file")
+        throw new FilesystemError(
+            "failed to check if path is a file",
+            isFile.error,
+        )
     }
 
-    return Results.ok(isFile.value)
+    return isFile.value
 }
 
-async function isLink(path: string): Promise<Result<boolean>> {
+async function isLink(path: string): Promise<boolean> {
     const output = await Results.ofPromise(fs.lstat(path))
     if (output.isError) {
-        return Results.wrap(output, "failed to get details of path")
+        throw new FilesystemError("failed to get details of path", output.error)
     }
 
     const isLink = Results.of(() => output.value.isSymbolicLink())
     if (isLink.isError) {
-        return Results.wrap(
-            isLink,
+        throw new FilesystemError(
             "failed to check if path is a symbolic link",
+            isLink.error,
         )
     }
 
-    return Results.ok(isLink.value)
+    return isLink.value
 }
 
-async function touch(path: string): Promise<NilResult> {
+async function touch(path: string): Promise<void> {
     const handle = await Results.ofPromise(fs.open(path, "w"))
     if (handle.isError) {
-        return Results.wrap(handle, "failed to create file")
+        throw new FilesystemError("failed to create file", handle.error)
     }
 
     const closeResult = await Results.ofPromise(handle.value.close())
     if (!closeResult) {
-        return Results.wrap(closeResult, "failed to close create file")
+        throw new FilesystemError("failed to close create file", closeResult)
     }
-
-    return Results.nil()
 }
 
-async function makeDir(path: string, makeParents = false): Promise<NilResult> {
+async function makeDir(path: string, makeParents = false): Promise<void> {
     const result = await Results.ofPromise(
         fs.mkdir(path, { recursive: makeParents }),
     )
     if (result.isError) {
-        return result
+        throw new FilesystemError("failed to create directory", result.error)
     }
-
-    return Results.nil()
 }
 
 export const Filesystem = {
