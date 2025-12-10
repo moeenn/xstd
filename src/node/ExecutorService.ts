@@ -79,17 +79,13 @@ export class ExecutorService<T> {
         ).length
 
         /**
-         *  keep rechecking futures status recursively untill all no more
+         * keep rechecking futures status recursively untill all no more
          * futures are in progress
          */
         if (numInProgress === 0) {
             this.#emitter.emit(this.#message.done)
             return
         }
-
-        // TODO: remove after testing.
-        // await setTimeout(this.#pollDelay)
-        // await this.#pollCompleteStatus()
     }
 
     submit(callback: AsyncCallback<T>): void {

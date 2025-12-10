@@ -8,6 +8,8 @@ interface Stringable {
     toString(): string
 }
 
+// TODO: allow padding named array values.
+
 export function named(query: string, args: NamedArgs): NamedResult {
     const params = [...query.matchAll(/:([a-zA-Z_][a-zA-Z0-9_]*)/g)].map(
         (match) => match[0].slice(1),
@@ -49,9 +51,4 @@ export class MissingArgumentError extends Error {
         super("missing sql query argument: " + arg)
         this.arg = arg
     }
-}
-
-export type ListResult<T> = {
-    data: T[]
-    totalCount: number
 }

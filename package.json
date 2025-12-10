@@ -9,7 +9,7 @@
         "type-check": "npx tsc --noEmit",
         "lint": "npx eslint --fix ./src/",
         "check": "npm run type-check && npm run lint",
-        "build": "npx esbuild src/main.ts --bundle --outfile=build/index.js --platform=node --format=esm --packages=external --minify",
+        "build": "npx esbuild src/main.ts --bundle --outfile=build/index.js --platform=node --format=esm --minify",
         "test": "node --import tsx --test"
     },
     "prettier": {

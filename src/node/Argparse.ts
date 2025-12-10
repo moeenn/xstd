@@ -1,8 +1,17 @@
 import path from "node:path"
 import process from "node:process"
-import { Pair } from "#src/core/Pair.js"
 import { StringBuilder } from "#src/core/StringBuilder.js"
 import { Results, type Option, type Result } from "#src/core/Monads.js"
+
+class Pair<T, E> {
+    first: T
+    second: E
+
+    constructor(first: T, second: E) {
+        this.first = first
+        this.second = second
+    }
+}
 
 type CliOptionsBase = {
     readonly name: string
