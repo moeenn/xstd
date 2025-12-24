@@ -1,6 +1,6 @@
 import { styleText } from "node:util"
 import process from "node:process"
-import { StringBuilder } from "#src/core/StringBuilder.ts"
+import { StringBuilder } from "#src/core/stringBuilder.ts"
 
 type Stringable = {
     toString(): string
@@ -16,11 +16,6 @@ function buildString(message: string, ...args: Stringable[]): string {
     return builder.toString()
 }
 
-function print(message: string, ...args: Stringable[]): void {
-    const s = buildString(message, args)
-    process.stdout.write(s + "\n")
-}
-
 type Color = "red" | "yellow" | "green" | "blue"
 
 function createFn(color: Color) {
@@ -30,10 +25,14 @@ function createFn(color: Color) {
     }
 }
 
-export const fmt = {
-    print,
-    info: createFn("blue"),
-    success: createFn("green"),
-    warn: createFn("yellow"),
-    error: createFn("red"),
-} as const
+export class Fmt {
+    static print(message: string, ...args: Stringable[]): void {
+        const s = buildString(message, args)
+        process.stdout.write(s + "\n")
+    }
+
+    static info = createFn("blue")
+    static success = createFn("green")
+    static warn = createFn("yellow")
+    static error = createFn("red")
+}

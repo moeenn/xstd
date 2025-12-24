@@ -1,5 +1,5 @@
-import { datePlaceholders, type DatePlaceholder } from "./DatePlaceholder.ts"
-import { type Option } from "./Monads.ts"
+import { datePlaceholders, type DatePlaceholder } from "./datePlaceholder.ts"
+import { type Option } from "./monads.ts"
 
 export const Format = {
     full: "%Y-%m-%d %H:%M",

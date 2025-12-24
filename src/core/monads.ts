@@ -76,4 +76,4 @@ export const Results = {
     toOption,
     of,
     ofPromise,
-}
+} as const

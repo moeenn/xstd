@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
-import { Results, type Option } from "#src/core/Monads.ts"
+import { Results, type Option } from "#src/core/monads.ts"
 
 type StatusCallback = () => void
 type AsyncCallback<T> = () => Promise<T>
@@ -111,7 +111,7 @@ export class ExecutorService<T> {
 
             const upperLimit = Math.min(this.#futures.length, this.#limit)
             for (let i = 0; i < upperLimit; i++) {
-                this.#futures[i].run()
+                this.#futures[i]?.run()
             }
         })
     }

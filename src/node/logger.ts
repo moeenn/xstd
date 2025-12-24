@@ -1,8 +1,8 @@
-import { DateTimeFormatter, Format } from "#src/core/DateTimeFormatter.ts"
-import { Results, type Result } from "#src/core/Monads.ts"
-import { StringBuilder } from "#src/core/StringBuilder.ts"
-import { Env } from "./Env.ts"
-import { ConsoleWriter, type Writer } from "./Writer.ts"
+import { DateTimeFormatter, Format } from "#src/core/dateTimeFormatter.ts"
+import { Results, type Option, type Result } from "#src/core/monads.ts"
+import { StringBuilder } from "#src/core/stringBuilder.ts"
+import { Env } from "./env.ts"
+import { ConsoleWriter, type Writer } from "./writer.ts"
 
 export class LogLevel {
     readonly level: number
@@ -57,7 +57,7 @@ type LogEntry = {
     timestamp: string
     level: string
     message: string
-    details?: Record<string, unknown>
+    details: Option<Record<string, unknown>>
 }
 
 export abstract class AbstractLogger {
@@ -86,7 +86,7 @@ export abstract class AbstractLogger {
             timestamp: timestamp.value,
             level: targetLevel.value,
             message,
-            details,
+            details: details ?? null,
         }
 
         return Results.ok(logEntry)

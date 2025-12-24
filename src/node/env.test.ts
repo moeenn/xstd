@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { Env } from "./Env.ts"
+import { Env } from "./env.ts"
 
 test("read strings and numbers", () => {
     const env = new Env({

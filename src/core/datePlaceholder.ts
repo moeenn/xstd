@@ -189,4 +189,4 @@ export const datePlaceholders: DatePlaceholder[] = [
     DatePlaceholderTimeTwenlveHours,
     DatePlaceholderFullDate,
     DatePlaceholderFullDateAlt,
-]
+] as const

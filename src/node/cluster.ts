@@ -1,7 +1,7 @@
 import cluster from "node:cluster"
 import os from "node:os"
-import type { AbstractLogger } from "./Logger.ts"
-import { Results } from "#src/core/Monads.ts"
+import type { AbstractLogger } from "./logger.ts"
+import { Results, type Option } from "#src/core/monads.ts"
 
 export type ClusterWorkerCount = number | "MAX"
 
@@ -11,11 +11,11 @@ type ClusterArgs = {
 }
 
 export class Cluster {
-    #logger?: AbstractLogger
+    #logger: Option<AbstractLogger>
     #workerCount: ClusterWorkerCount
 
     constructor(args: ClusterArgs) {
-        this.#logger = args.logger
+        this.#logger = args.logger ?? null
         this.#workerCount = args.workerCount
     }
 

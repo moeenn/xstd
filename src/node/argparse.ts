@@ -1,7 +1,7 @@
 import path from "node:path"
 import process from "node:process"
-import { StringBuilder } from "#src/core/StringBuilder.ts"
-import { Results, type Option, type Result } from "#src/core/Monads.ts"
+import { StringBuilder } from "#src/core/stringBuilder.ts"
+import { Results, type Option, type Result } from "#src/core/monads.ts"
 
 class Pair<T, E> {
     first: T

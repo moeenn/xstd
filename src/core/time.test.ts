@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { Time } from "./Time.ts"
+import { Time } from "./time.ts"
 
 test("parse valid time", () => {
     const midnight = Time.of(12, 0)

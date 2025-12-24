@@ -1,4 +1,4 @@
-import type { Option } from "#src/core/Monads.ts"
+import type { Option } from "#src/core/monads.ts"
 
 type NamedArgs = Record<string, Stringable | Date | null>
 type NamedResult = [string, ParamType[]]

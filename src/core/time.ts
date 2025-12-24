@@ -1,4 +1,4 @@
-import { Results } from "./Monads.ts"
+import { Results } from "./monads.ts"
 
 export class Time {
     readonly #hours: number

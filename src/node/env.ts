@@ -1,4 +1,4 @@
-import { Results } from "#src/core/Monads.ts"
+import { Results } from "#src/core/monads.ts"
 
 export class Env {
     #args: Record<string, string>
