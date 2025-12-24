@@ -4,9 +4,7 @@ Extended Standard Library for JavaScript and NodeJS.
 
 #### TODO
 
-- [ ] LinkedList
-- [ ] Queue
-- [ ] Stack
+- [ ] Path construction
 - [ ] Http status
 - [ ] Base64 encode / decode
 - [ ] Unit tests

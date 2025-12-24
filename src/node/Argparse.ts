@@ -1,7 +1,7 @@
 import path from "node:path"
 import process from "node:process"
-import { StringBuilder } from "#src/core/StringBuilder.js"
-import { Results, type Option, type Result } from "#src/core/Monads.js"
+import { StringBuilder } from "#src/core/StringBuilder.ts"
+import { Results, type Option, type Result } from "#src/core/Monads.ts"
 
 class Pair<T, E> {
     first: T
@@ -122,9 +122,7 @@ export class Argparse {
         // parse flags provided without values.
         if (!arg.includes("=")) {
             const key = arg.slice(1)
-            const relatedRegisteredOption = this.#options.find(
-                (opt) => opt.name === key,
-            )
+            const relatedRegisteredOption = this.#options.find((opt) => opt.name === key)
 
             if (!relatedRegisteredOption) {
                 return Results.err("unknown argument: " + key)
@@ -145,9 +143,7 @@ export class Argparse {
         }
 
         const [key, value] = pieces
-        const relatedRegisteredOption = this.#options.find(
-            (opt) => opt.name === key,
-        )
+        const relatedRegisteredOption = this.#options.find((opt) => opt.name === key)
 
         if (!relatedRegisteredOption) {
             return Results.err("unknown argument: " + key)
@@ -166,9 +162,7 @@ export class Argparse {
                         return Results.err(`missing value for flag -${key}`)
 
                     default:
-                        return Results.err(
-                            `unexpected value for boolean flag -${key}: ${value}`,
-                        )
+                        return Results.err(`unexpected value for boolean flag -${key}: ${value}`)
                 }
 
             case "int":
@@ -220,8 +214,7 @@ export class Argparse {
 
         builder.append(`usage: ${this.#scriptName} [argument=value]\n`)
         const longestArg = this.#options.reduce(
-            (accum, current) =>
-                current.name.length > accum ? current.name.length : accum,
+            (accum, current) => (current.name.length > accum ? current.name.length : accum),
             0,
         )
 
@@ -229,13 +222,9 @@ export class Argparse {
         if (this.#options.length) {
             builder.append("\noptions:\n")
             for (const option of this.#options) {
-                const space = " ".repeat(
-                    longestArg + paddingLength - option.name.length - 3,
-                )
+                const space = " ".repeat(longestArg + paddingLength - option.name.length - 3)
 
-                builder.append(
-                    ` -${option.name}: ${space} ${option.description}\n`,
-                )
+                builder.append(` -${option.name}: ${space} ${option.description}\n`)
 
                 if (option.usage) {
                     const fullspace = " ".repeat(longestArg + paddingLength + 2)

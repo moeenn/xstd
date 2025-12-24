@@ -1,4 +1,4 @@
-import { Results } from "#src/core/Monads.js"
+import { Results } from "#src/core/Monads.ts"
 
 export class Env {
     #args: Record<string, string>
@@ -31,9 +31,7 @@ export class Env {
 
         const parsedValue = Results.of(() => parseFloat(rawValue))
         if (parsedValue.isError) {
-            throw new Error(
-                `environment variable ${name} is not a valid number`,
-            )
+            throw new Error(`environment variable ${name} is not a valid number`)
         }
 
         return parsedValue.value

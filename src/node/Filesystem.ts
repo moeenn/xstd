@@ -1,5 +1,5 @@
 import fs from "node:fs/promises"
-import { Results, type Option } from "#src/core/Monads.js"
+import { Results, type Option } from "#src/core/Monads.ts"
 
 export class FilesystemError extends Error {
     details: Option<string> = null
@@ -23,10 +23,7 @@ async function isDirectory(path: string): Promise<boolean> {
 
     const isDir = Results.of(() => output.value.isDirectory())
     if (isDir.isError) {
-        throw new FilesystemError(
-            "failed to check if path is a directory",
-            isDir.error,
-        )
+        throw new FilesystemError("failed to check if path is a directory", isDir.error)
     }
 
     return isDir.value
@@ -40,10 +37,7 @@ async function isFile(path: string): Promise<boolean> {
 
     const isFile = Results.of(() => output.value.isFile())
     if (isFile.isError) {
-        throw new FilesystemError(
-            "failed to check if path is a file",
-            isFile.error,
-        )
+        throw new FilesystemError("failed to check if path is a file", isFile.error)
     }
 
     return isFile.value
@@ -57,10 +51,7 @@ async function isLink(path: string): Promise<boolean> {
 
     const isLink = Results.of(() => output.value.isSymbolicLink())
     if (isLink.isError) {
-        throw new FilesystemError(
-            "failed to check if path is a symbolic link",
-            isLink.error,
-        )
+        throw new FilesystemError("failed to check if path is a symbolic link", isLink.error)
     }
 
     return isLink.value
@@ -79,9 +70,7 @@ async function touch(path: string): Promise<void> {
 }
 
 async function makeDir(path: string, makeParents = false): Promise<void> {
-    const result = await Results.ofPromise(
-        fs.mkdir(path, { recursive: makeParents }),
-    )
+    const result = await Results.ofPromise(fs.mkdir(path, { recursive: makeParents }))
     if (result.isError) {
         throw new FilesystemError("failed to create directory", result.error)
     }

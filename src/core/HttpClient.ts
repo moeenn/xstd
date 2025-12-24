@@ -1,16 +1,10 @@
-import type { AbstractLogger } from "#src/node/Logger.js"
-import { Results, type Option, type Result } from "./Monads.js"
+import type { AbstractLogger } from "#src/node/Logger.ts"
+import { Results, type Option, type Result } from "./Monads.ts"
 import { type ReadableStream } from "node:stream/web"
 
 type RequestBody = Record<string, unknown> | FormData
 
-export type HttpRequestMethod =
-    | "GET"
-    | "POST"
-    | "PUT"
-    | "PATCH"
-    | "DELETE"
-    | "OPTIONS"
+export type HttpRequestMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS"
 
 type HttpResponseType = "text" | "json" | "blob"
 const ResponseType: Record<HttpResponseType, HttpResponseType> = {
@@ -165,10 +159,10 @@ export class HttpResponse {
 }
 
 export class HttpClient {
-    #logger?: AbstractLogger
+    #logger: Option<AbstractLogger>
 
-    constructor(logger?: AbstractLogger) {
-        this.#logger = logger
+    constructor(args?: { logger?: AbstractLogger }) {
+        this.#logger = args?.logger ?? null
     }
 
     async #sendRequest(
@@ -184,10 +178,7 @@ export class HttpClient {
                 const encoded = Results.of(() => JSON.stringify(rawBody))
                 if (encoded.isError) {
                     return {
-                        response: Results.wrap(
-                            encoded,
-                            "failed to json encode request body",
-                        ),
+                        response: Results.wrap(encoded, "failed to json encode request body"),
                         retry: false,
                     }
                 }
@@ -201,7 +192,7 @@ export class HttpClient {
                 method: request.method,
                 headers: request.headers,
                 signal: AbortSignal.timeout(request.timeout),
-                body: body ?? undefined,
+                body: body ?? null,
             }),
         )
 
@@ -215,9 +206,7 @@ export class HttpClient {
         const statusCode = res.value.status
         if (request.retry && statusCode == request.retry.retryStatusCode) {
             return {
-                response: Results.err(
-                    `retry status code ${statusCode} received`,
-                ),
+                response: Results.err(`retry status code ${statusCode} received`),
                 retry: true,
             }
         }
@@ -227,20 +216,13 @@ export class HttpClient {
                 const data = await Results.ofPromise(res.value.text())
                 if (data.isError) {
                     return {
-                        response: Results.wrap(
-                            data,
-                            "failed to read response data as text",
-                        ),
+                        response: Results.wrap(data, "failed to read response data as text"),
                         retry: false,
                     }
                 }
                 return {
                     response: Results.ok(
-                        new HttpResponse(
-                            statusCode,
-                            ResponseType.text,
-                            data.value,
-                        ),
+                        new HttpResponse(statusCode, ResponseType.text, data.value),
                     ),
                     retry: false,
                 }
@@ -250,20 +232,13 @@ export class HttpClient {
                 const data = await Results.ofPromise(res.value.blob())
                 if (data.isError) {
                     return {
-                        response: Results.wrap(
-                            data,
-                            "failed to read response data as binay blob",
-                        ),
+                        response: Results.wrap(data, "failed to read response data as binay blob"),
                         retry: false,
                     }
                 }
                 return {
                     response: Results.ok(
-                        new HttpResponse(
-                            statusCode,
-                            ResponseType.blob,
-                            data.value,
-                        ),
+                        new HttpResponse(statusCode, ResponseType.blob, data.value),
                     ),
                     retry: false,
                 }
@@ -273,28 +248,21 @@ export class HttpClient {
                 const responseJson = await Results.ofPromise(res.value.json())
                 if (responseJson.isError) {
                     return {
-                        response: Results.wrap(
-                            responseJson,
-                            "failed to parse response as json",
-                        ),
+                        response: Results.wrap(responseJson, "failed to parse response as json"),
                         retry: false,
                     }
                 }
 
                 const data = responseJson.value
                 return {
-                    response: Results.ok(
-                        new HttpResponse(statusCode, ResponseType.json, data),
-                    ),
+                    response: Results.ok(new HttpResponse(statusCode, ResponseType.json, data)),
                     retry: false,
                 }
             }
 
             default: {
                 return {
-                    response: Results.err(
-                        "unexpected response type: " + request.responseType,
-                    ),
+                    response: Results.err("unexpected response type: " + request.responseType),
                     retry: false,
                 }
             }
@@ -337,9 +305,7 @@ export class HttpClient {
 
 // TODO: also incorporate exponential back-off.
 export class HttpStreamClient {
-    async stream(
-        request: HttpRequest,
-    ): Promise<Result<ReadableStream<unknown>>> {
+    async stream(request: HttpRequest): Promise<Result<ReadableStream<unknown>>> {
         let body: Option<string | FormData> = null
         if (request.body) {
             const rawBody = request.body
@@ -348,10 +314,7 @@ export class HttpStreamClient {
             } else {
                 const encoded = Results.of(() => JSON.stringify(rawBody))
                 if (encoded.isError) {
-                    return Results.wrap(
-                        encoded,
-                        "failed to json encode request body",
-                    )
+                    return Results.wrap(encoded, "failed to json encode request body")
                 }
 
                 body = encoded.value
@@ -363,7 +326,7 @@ export class HttpStreamClient {
                 method: request.method,
                 headers: request.headers,
                 signal: AbortSignal.timeout(request.timeout),
-                body: body ?? undefined,
+                body: body ?? null,
             }),
         )
 

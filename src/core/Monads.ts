@@ -30,8 +30,7 @@ function wrap(result: ErrVariant, prefix: string): ErrVariant {
     return result
 }
 
-const toOption = <T>(result: Result<T>): Option<T> =>
-    result.isError ? null : result.value
+const toOption = <T>(result: Result<T>): Option<T> => (result.isError ? null : result.value)
 
 function of<T>(fn: () => T): Result<T> {
     try {

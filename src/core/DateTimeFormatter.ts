@@ -1,5 +1,5 @@
-import { datePlaceholders, type DatePlaceholder } from "./DatePlaceholder.js"
-import { type Option } from "./Monads.js"
+import { datePlaceholders, type DatePlaceholder } from "./DatePlaceholder.ts"
+import { type Option } from "./Monads.ts"
 
 export const Format = {
     full: "%Y-%m-%d %H:%M",
@@ -39,8 +39,7 @@ export class DateTimeFormatter {
         // create a copy so input format string is not mutated.
         let output = `${format}`
         for (const placeholder of placeholdersSet) {
-            const foundDatePlaceholder =
-                DateTimeFormatter.findPlaceholder(placeholder)
+            const foundDatePlaceholder = DateTimeFormatter.findPlaceholder(placeholder)
 
             if (!foundDatePlaceholder) {
                 throw new Error(`unknown placeholder: ${placeholder}`)

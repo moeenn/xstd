@@ -1,4 +1,4 @@
-import { Results, type Result } from "./Monads.js"
+import { Results, type Result } from "./Monads.ts"
 
 type KnownType =
     | "String"

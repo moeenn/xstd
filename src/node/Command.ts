@@ -1,4 +1,4 @@
-import { Results, type Option } from "#src/core/Monads.js"
+import { Results, type Option } from "#src/core/Monads.ts"
 import { spawn } from "node:child_process"
 
 type RunOptions = {
@@ -20,9 +20,7 @@ async function run(
         p.stderr.on("data", (data) => process.stderr.write(data))
     }
 
-    const code = await new Promise((resolve) =>
-        p.on("close", (code) => resolve(code)),
-    )
+    const code = await new Promise((resolve) => p.on("close", (code) => resolve(code)))
 
     if (typeof code !== "number") {
         throw new Error("unexpected status code type")
@@ -32,9 +30,7 @@ async function run(
 }
 
 async function isAvailable(command: string): Promise<boolean> {
-    const code = await Results.ofPromise(
-        run("which", [command], { silenced: true }),
-    )
+    const code = await Results.ofPromise(run("which", [command], { silenced: true }))
     if (code.isError) {
         return false
     }

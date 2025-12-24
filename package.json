@@ -1,33 +1,32 @@
 {
-    "name": "js-std",
+    "name": "xstd",
     "version": "0.0.1",
     "type": "module",
-    "main": "main.js",
     "scripts": {
-        "start": "tsx ./src/main.ts",
+        "start": "node ./src/main.ts",
         "fmt": "npx prettier --write ./src/",
         "type-check": "npx tsc --noEmit",
         "lint": "npx eslint --fix ./src/",
         "check": "npm run type-check && npm run lint",
-        "build": "npx esbuild src/main.ts --bundle --outfile=build/index.js --platform=node --format=esm --minify",
-        "test": "node --import tsx --test"
+        "build": "npx esbuild src/main.ts --bundle --outfile=dist/index.js --platform=node --format=esm --packages=external --minify",
+        "test": "node --test"
     },
     "prettier": {
         "singleQuote": false,
         "semi": false,
         "tabWidth": 4,
-        "trailingComma": "all"
+        "trailingComma": "all",
+        "printWidth": 100
     },
     "imports": {
-        "#src/*": "./dist/*"
+        "#src/*": "./src/*"
     },
     "devDependencies": {
         "@types/node": "^24.2.0",
-        "esbuild": "^0.25.12",
+        "esbuild": "^0.27.0",
         "eslint": "^9.32.0",
         "prettier": "^3.6.2",
-        "tsx": "^4.20.3",
         "typescript": "^5.9.2",
-        "typescript-eslint": "^8.39.0"
+        "typescript-eslint": "^8.47.0"
     }
 }

@@ -1,4 +1,4 @@
-import { Results } from "./Monads.js"
+import { Results } from "./Monads.ts"
 
 export class Time {
     readonly #hours: number
@@ -63,8 +63,7 @@ export class Time {
 
         const adjustedHours = ((): number => {
             if (amPmString == "am" && hoursAsNumber.value == 12) return 0
-            if (amPmString === "pm" && hoursAsNumber.value != 12)
-                return hoursAsNumber.value + 12
+            if (amPmString === "pm" && hoursAsNumber.value != 12) return hoursAsNumber.value + 12
             return hoursAsNumber.value
         })()
 
@@ -80,8 +79,7 @@ export class Time {
     }
 
     public to12HourString(): string {
-        const adjustedHours =
-            this.#hours == 0 || this.#hours == 12 ? 12 : this.#hours % 12
+        const adjustedHours = this.#hours == 0 || this.#hours == 12 ? 12 : this.#hours % 12
         const amPm = this.#hours < 12 ? "AM" : "PM"
         return `${Time.zeroPad(adjustedHours)}:${Time.zeroPad(this.#minutes)}${amPm}`
     }

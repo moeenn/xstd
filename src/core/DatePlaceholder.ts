@@ -82,15 +82,7 @@ export const DatePlaceholderDayName: DatePlaceholder = {
     format: (date) => weekdays[date.getUTCDay()],
 } as const
 
-const weekdaysAbbreviated = [
-    "Sun",
-    "Mon",
-    "Tue",
-    "Wed",
-    "Thu",
-    "Fri",
-    "Sat",
-] as const
+const weekdaysAbbreviated = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const
 
 export const DatePlaceholderDayNameAbbreviated: DatePlaceholder = {
     placeholders: ["%a"] as const,
@@ -105,10 +97,7 @@ export const DatePlaceholderDayNumber: DatePlaceholder = {
 export const DatePlaceholderDayNumberAlt: DatePlaceholder = {
     placeholders: ["%u"] as const, // i.e. 1-7 with Monday is 1.
     format: (date) => {
-        const rearrangedWeekdays = [
-            ...weekdaysAbbreviated.toSpliced(10, 1),
-            weekdaysAbbreviated[0],
-        ]
+        const rearrangedWeekdays = [...weekdaysAbbreviated.toSpliced(10, 1), weekdaysAbbreviated[0]]
         const dayNum = date.getUTCDate() // 0-6
         return rearrangedWeekdays[dayNum]
     },

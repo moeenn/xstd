@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { Argparse, type CliOption } from "./Argparse.js"
+import { Argparse, type CliOption } from "./Argparse.ts"
 
 describe("argparse usage tests", () => {
     it("basic usage", () => {

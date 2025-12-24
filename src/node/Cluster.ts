@@ -1,7 +1,7 @@
 import cluster from "node:cluster"
 import os from "node:os"
-import type { AbstractLogger } from "./Logger.js"
-import { Results } from "#src/core/Monads.js"
+import type { AbstractLogger } from "./Logger.ts"
+import { Results } from "#src/core/Monads.ts"
 
 export type ClusterWorkerCount = number | "MAX"
 
@@ -22,8 +22,7 @@ export class Cluster {
     start(entrypoint: () => Promise<void>) {
         const numCPUs = os.cpus().length
         if (cluster.isPrimary) {
-            const numWorkers =
-                this.#workerCount === "MAX" ? numCPUs : this.#workerCount
+            const numWorkers = this.#workerCount === "MAX" ? numCPUs : this.#workerCount
             this.#logger?.info("starting cluster", { masterPID: process.pid })
             for (let i = 0; i < numWorkers; i++) {
                 cluster.fork()

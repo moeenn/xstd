@@ -1,16 +1,40 @@
 {
-	"compilerOptions": {
-		"target": "ESNext",
-		"module": "NodeNext",
-		"strict": true,
-		"verbatimModuleSyntax": true,
-		"skipLibCheck": true,
-		"types": ["node"],
-		"outDir": "./dist",
-		"baseUrl": ".",
-		"paths": {
-			"#src/*": ["./src/*"]
-		}
-	},
-	"exclude": ["node_modules"]
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "display": "Strictest",
+    "compilerOptions": {
+        "strict": true,
+        "allowUnusedLabels": false,
+        "allowUnreachableCode": false,
+        "allowImportingTsExtensions": true,
+        "moduleResolution": "bundler",
+        "noEmit": true,
+        "exactOptionalPropertyTypes": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noUncheckedIndexedAccess": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "isolatedModules": true,
+        "checkJs": true,
+        "esModuleInterop": true,
+        "target": "ESNext",
+        "module": "preserve",
+        "verbatimModuleSyntax": true,
+        "skipLibCheck": true,
+        "types": [
+            "node"
+        ],
+        "outDir": "./dist",
+        "baseUrl": ".",
+        "paths": {
+            "#src/*": [
+                "./src/*"
+            ]
+        }
+    },
+    "exclude": [
+        "node_modules"
+    ]
 }

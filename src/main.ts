@@ -1,5 +1,5 @@
-import { Command } from "./node/Command.js"
-import { entrypoint } from "./node/Entrypoint.js"
+import { Command } from "./node/Command.ts"
+import { entrypoint } from "./node/Entrypoint.ts"
 
 async function main() {
     const status = await Command.run("apt-cache", ["search", "openjdk"])

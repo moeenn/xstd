@@ -1,8 +1,8 @@
-import { DateTimeFormatter, Format } from "#src/core/DateTimeFormatter.js"
-import { Results, type Result } from "#src/core/Monads.js"
-import { StringBuilder } from "#src/core/StringBuilder.js"
-import { Env } from "./Env.js"
-import { ConsoleWriter, type Writer } from "./Writer.js"
+import { DateTimeFormatter, Format } from "#src/core/DateTimeFormatter.ts"
+import { Results, type Result } from "#src/core/Monads.ts"
+import { StringBuilder } from "#src/core/StringBuilder.ts"
+import { Env } from "./Env.ts"
+import { ConsoleWriter, type Writer } from "./Writer.ts"
 
 export class LogLevel {
     readonly level: number
@@ -21,9 +21,7 @@ export class LogLevel {
         const envValue = env.readString(key)
         const foundLevel = levels.find((level) => level.value === envValue)
         if (!foundLevel) {
-            throw new Error(
-                `unknown value for environment variable ${key}: ${envValue}`,
-            )
+            throw new Error(`unknown value for environment variable ${key}: ${envValue}`)
         }
 
         return foundLevel
@@ -79,9 +77,7 @@ export abstract class AbstractLogger {
         message: string,
         details?: Record<string, unknown>,
     ): Result<LogEntry> {
-        const timestamp = Results.of(() =>
-            DateTimeFormatter.format(new Date(), Format.full),
-        )
+        const timestamp = Results.of(() => DateTimeFormatter.format(new Date(), Format.full))
         if (timestamp.isError) {
             return Results.err(`failed to get timestamp: ` + timestamp.error)
         }
@@ -99,11 +95,7 @@ export abstract class AbstractLogger {
     #log(targetLevel: LogLevel) {
         return (message: string, details?: Record<string, unknown>): void => {
             if (targetLevel.level >= this.currentLevel.level) {
-                const logEntry = this.#createLogEntry(
-                    targetLevel,
-                    message,
-                    details,
-                )
+                const logEntry = this.#createLogEntry(targetLevel, message, details)
                 if (logEntry.isError) {
                     this.error(logEntry.error.message)
                     return
@@ -128,19 +120,14 @@ export class Logger extends AbstractLogger {
 
     static DefaultLogger(): Logger {
         if (!Logger.#defaultLogger) {
-            Logger.#defaultLogger = new Logger(
-                LogLevel.Info,
-                new ConsoleWriter(),
-            )
+            Logger.#defaultLogger = new Logger(LogLevel.Info, new ConsoleWriter())
         }
         return Logger.#defaultLogger
     }
 
     printEntry(logEntry: LogEntry): void {
         const builder = new StringBuilder()
-        builder.append(
-            `${logEntry.timestamp} - ${logEntry.level} - ${logEntry.message}`,
-        )
+        builder.append(`${logEntry.timestamp} - ${logEntry.level} - ${logEntry.message}`)
 
         if (logEntry.details) {
             for (const [key, value] of Object.entries(logEntry.details)) {
@@ -161,10 +148,7 @@ export class JsonLogger extends AbstractLogger {
 
     static DefaultLogger(): Logger {
         if (!JsonLogger.#defaultLogger) {
-            JsonLogger.#defaultLogger = new JsonLogger(
-                LogLevel.Info,
-                new ConsoleWriter(),
-            )
+            JsonLogger.#defaultLogger = new JsonLogger(LogLevel.Info, new ConsoleWriter())
         }
         return JsonLogger.#defaultLogger
     }

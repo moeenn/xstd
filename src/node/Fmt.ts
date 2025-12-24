@@ -1,6 +1,6 @@
 import { styleText } from "node:util"
 import process from "node:process"
-import { StringBuilder } from "#src/core/StringBuilder.js"
+import { StringBuilder } from "#src/core/StringBuilder.ts"
 
 type Stringable = {
     toString(): string

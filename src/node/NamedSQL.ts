@@ -1,4 +1,4 @@
-import type { Option } from "#src/core/Monads.js"
+import type { Option } from "#src/core/Monads.ts"
 
 type NamedArgs = Record<string, Stringable | Date | null>
 type NamedResult = [string, ParamType[]]
@@ -11,8 +11,8 @@ interface Stringable {
 // TODO: allow padding named array values.
 
 export function named(query: string, args: NamedArgs): NamedResult {
-    const params = [...query.matchAll(/:([a-zA-Z_][a-zA-Z0-9_]*)/g)].map(
-        (match) => match[0].slice(1),
+    const params = [...query.matchAll(/:([a-zA-Z_][a-zA-Z0-9_]*)/g)].map((match) =>
+        match[0].slice(1),
     )
 
     const paramsSet = new Set(params)

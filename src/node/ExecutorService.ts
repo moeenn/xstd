@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
-import { Results, type Option } from "#src/core/Monads.js"
+import { Results, type Option } from "#src/core/Monads.ts"
 
 type StatusCallback = () => void
 type AsyncCallback<T> = () => Promise<T>
@@ -53,10 +53,7 @@ export class ExecutorService<T> {
     }
 
     constructor(limit: number = 1) {
-        assert(
-            limit > 0,
-            "executor service limit should be greater than or equal to 1",
-        )
+        assert(limit > 0, "executor service limit should be greater than or equal to 1")
         this.#limit = limit
         this.#futures = []
         this.#emitter = new EventEmitter()
@@ -74,9 +71,7 @@ export class ExecutorService<T> {
     }
 
     async #checkDoneStatus() {
-        const numInProgress = this.#futures.filter(
-            (ft) => ft.state.status === "inprogress",
-        ).length
+        const numInProgress = this.#futures.filter((ft) => ft.state.status === "inprogress").length
 
         /**
          * keep rechecking futures status recursively untill all no more

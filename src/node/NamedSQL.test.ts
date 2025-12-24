@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { MissingArgumentError, named } from "./NamedSQL.js"
+import { MissingArgumentError, named } from "./NamedSQL.ts"
 
 test("basic scenario", () => {
     const input = `
