@@ -1,4 +1,4 @@
-import { Results } from "./monads.ts"
+import { Result } from "./monads.ts"
 
 export class Time {
     readonly #hours: number
@@ -22,12 +22,12 @@ export class Time {
             throw new Error(`invalid time: ${input}`)
         }
 
-        const hoursAsNumber = Results.of(() => parseInt(hours))
+        const hoursAsNumber = Result.of(() => parseInt(hours))
         if (hoursAsNumber.isError) {
             throw new Error(`invalid hours value: ${hours}`)
         }
 
-        const minutesAsNumber = Results.of(() => parseInt(minutes))
+        const minutesAsNumber = Result.of(() => parseInt(minutes))
         if (minutesAsNumber.isError) {
             throw new Error(`invalid minutes value: ${minutes}`)
         }
@@ -51,12 +51,12 @@ export class Time {
             throw new Error(`missing hours or minutes`)
         }
 
-        const hoursAsNumber = Results.of(() => parseInt(hours))
+        const hoursAsNumber = Result.of(() => parseInt(hours))
         if (hoursAsNumber.isError) {
             throw new Error(`invalid hours value: ${hours}`)
         }
 
-        const minutesAsNumber = Results.of(() => parseInt(minutes))
+        const minutesAsNumber = Result.of(() => parseInt(minutes))
         if (minutesAsNumber.isError) {
             throw new Error(`invalid minutes value: ${hours}`)
         }

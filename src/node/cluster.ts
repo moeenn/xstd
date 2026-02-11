@@ -1,7 +1,7 @@
 import cluster from "node:cluster"
 import os from "node:os"
 import type { AbstractLogger } from "./logger.ts"
-import { Results, type Option } from "#src/core/monads.ts"
+import { Result, type option } from "#src/core/monads.ts"
 
 export type ClusterWorkerCount = number | "MAX"
 
@@ -11,11 +11,11 @@ type ClusterArgs = {
 }
 
 export class Cluster {
-    #logger: Option<AbstractLogger>
+    #logger: option<AbstractLogger>
     #workerCount: ClusterWorkerCount
 
     constructor(args: ClusterArgs) {
-        this.#logger = args.logger ?? null
+        this.#logger = args.logger
         this.#workerCount = args.workerCount
     }
 
@@ -38,7 +38,7 @@ export class Cluster {
         }
 
         if (!cluster.isPrimary) {
-            Results.ofPromise(entrypoint()).then((result) => {
+            Result.ofPromise(entrypoint()).then((result) => {
                 if (result.isError) {
                     this.#logger?.error("server startup failure", {
                         error: result.error,

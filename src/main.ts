@@ -1,7 +1,7 @@
 import { entrypoint } from "./node/entrypoint.ts"
 
-async function main() {
-    console.log("hello world")
+function main() {
+    console.log("Hello world")
 }
 
 entrypoint(main)

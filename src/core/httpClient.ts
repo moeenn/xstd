@@ -1,5 +1,5 @@
 import type { AbstractLogger } from "#src/node/logger.ts"
-import { Results, type Option, type Result } from "./monads.ts"
+import { Result, type option, type result, type resultp } from "./monads.ts"
 import { type ReadableStream } from "node:stream/web"
 
 type RequestBody = Record<string, unknown> | FormData
@@ -57,19 +57,19 @@ class RequestRetry {
 export class HttpRequest {
     readonly url: URL
     #method: HttpRequestMethod
-    #body: Option<RequestBody>
+    #body: option<RequestBody>
     #responseType: HttpResponseType
     #headers: Headers
     #timeout: number
-    #retry: Option<RequestRetry>
+    #retry: option<RequestRetry>
 
     constructor(url: URL) {
         this.url = url
         this.#method = "GET"
-        this.#body = null
+        this.#body = undefined
         this.#responseType = ResponseType.json
         this.#timeout = 10_000 // 10 seconds.
-        this.#retry = null
+        this.#retry = undefined
         this.#headers = new Headers({
             Accept: "application/json",
         })
@@ -79,7 +79,7 @@ export class HttpRequest {
         return this.#method
     }
 
-    get body(): Option<RequestBody> {
+    get body(): option<RequestBody> {
         return this.#body
     }
 
@@ -95,7 +95,7 @@ export class HttpRequest {
         return this.#timeout
     }
 
-    get retry(): Option<RequestRetry> {
+    get retry(): option<RequestRetry> {
         return this.#retry
     }
 
@@ -159,26 +159,26 @@ export class HttpResponse {
 }
 
 export class HttpClient {
-    #logger: Option<AbstractLogger>
+    #logger: option<AbstractLogger>
 
     constructor(args?: { logger?: AbstractLogger }) {
-        this.#logger = args?.logger ?? null
+        this.#logger = args?.logger
     }
 
     async #sendRequest(
         request: HttpRequest,
-    ): Promise<{ response: Result<HttpResponse>; retry: boolean }> {
-        let body: Option<string | FormData> = null
+    ): Promise<{ response: result<HttpResponse>; retry: boolean }> {
+        let body: option<string | FormData>
 
         if (request.body) {
             const rawBody = request.body
             if (rawBody instanceof FormData) {
                 body = rawBody
             } else {
-                const encoded = Results.of(() => JSON.stringify(rawBody))
+                const encoded = Result.of(() => JSON.stringify(rawBody))
                 if (encoded.isError) {
                     return {
-                        response: Results.wrap(encoded, "failed to json encode request body"),
+                        response: Result.wrap(encoded, "failed to json encode request body"),
                         retry: false,
                     }
                 }
@@ -187,7 +187,7 @@ export class HttpClient {
             }
         }
 
-        const res = await Results.ofPromise(
+        const res = await Result.ofPromise(
             fetch(request.url, {
                 method: request.method,
                 headers: request.headers,
@@ -198,7 +198,7 @@ export class HttpClient {
 
         if (res.isError) {
             return {
-                response: Results.wrap(res, "request failed"),
+                response: Result.wrap(res, "request failed"),
                 retry: true,
             }
         }
@@ -206,22 +206,22 @@ export class HttpClient {
         const statusCode = res.value.status
         if (request.retry && statusCode == request.retry.retryStatusCode) {
             return {
-                response: Results.err(`retry status code ${statusCode} received`),
+                response: Result.err(`retry status code ${statusCode} received`),
                 retry: true,
             }
         }
 
         switch (request.responseType) {
             case ResponseType.text: {
-                const data = await Results.ofPromise(res.value.text())
+                const data = await Result.ofPromise(res.value.text())
                 if (data.isError) {
                     return {
-                        response: Results.wrap(data, "failed to read response data as text"),
+                        response: Result.wrap(data, "failed to read response data as text"),
                         retry: false,
                     }
                 }
                 return {
-                    response: Results.ok(
+                    response: Result.ok(
                         new HttpResponse(statusCode, ResponseType.text, data.value),
                     ),
                     retry: false,
@@ -229,15 +229,15 @@ export class HttpClient {
             }
 
             case ResponseType.blob: {
-                const data = await Results.ofPromise(res.value.blob())
+                const data = await Result.ofPromise(res.value.blob())
                 if (data.isError) {
                     return {
-                        response: Results.wrap(data, "failed to read response data as binay blob"),
+                        response: Result.wrap(data, "failed to read response data as binay blob"),
                         retry: false,
                     }
                 }
                 return {
-                    response: Results.ok(
+                    response: Result.ok(
                         new HttpResponse(statusCode, ResponseType.blob, data.value),
                     ),
                     retry: false,
@@ -245,24 +245,24 @@ export class HttpClient {
             }
 
             case ResponseType.json: {
-                const responseJson = await Results.ofPromise(res.value.json())
+                const responseJson = await Result.ofPromise(res.value.json())
                 if (responseJson.isError) {
                     return {
-                        response: Results.wrap(responseJson, "failed to parse response as json"),
+                        response: Result.wrap(responseJson, "failed to parse response as json"),
                         retry: false,
                     }
                 }
 
                 const data = responseJson.value
                 return {
-                    response: Results.ok(new HttpResponse(statusCode, ResponseType.json, data)),
+                    response: Result.ok(new HttpResponse(statusCode, ResponseType.json, data)),
                     retry: false,
                 }
             }
 
             default: {
                 return {
-                    response: Results.err("unexpected response type: " + request.responseType),
+                    response: Result.err("unexpected response type: " + request.responseType),
                     retry: false,
                 }
             }
@@ -305,23 +305,23 @@ export class HttpClient {
 
 // TODO: also incorporate exponential back-off.
 export class HttpStreamClient {
-    async stream(request: HttpRequest): Promise<Result<ReadableStream<unknown>>> {
-        let body: Option<string | FormData> = null
+    async stream(request: HttpRequest): resultp<ReadableStream<unknown>> {
+        let body: option<string | FormData>
         if (request.body) {
             const rawBody = request.body
             if (rawBody instanceof FormData) {
                 body = rawBody
             } else {
-                const encoded = Results.of(() => JSON.stringify(rawBody))
+                const encoded = Result.of(() => JSON.stringify(rawBody))
                 if (encoded.isError) {
-                    return Results.wrap(encoded, "failed to json encode request body")
+                    return Result.wrap(encoded, "failed to json encode request body")
                 }
 
                 body = encoded.value
             }
         }
 
-        const res = await Results.ofPromise(
+        const res = await Result.ofPromise(
             fetch(request.url, {
                 method: request.method,
                 headers: request.headers,
@@ -331,13 +331,13 @@ export class HttpStreamClient {
         )
 
         if (res.isError) {
-            return Results.wrap(res, "request failed")
+            return Result.wrap(res, "request failed")
         }
 
         if (!res.value.body) {
-            return Results.err("empty response stream")
+            return Result.err("empty response stream")
         }
 
-        return Results.ok(res.value.body as ReadableStream)
+        return Result.ok(res.value.body as ReadableStream)
     }
 }

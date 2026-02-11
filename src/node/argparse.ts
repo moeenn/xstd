@@ -1,7 +1,7 @@
 import path from "node:path"
 import process from "node:process"
 import { StringBuilder } from "#src/core/stringBuilder.ts"
-import { Results, type Option, type Result } from "#src/core/monads.ts"
+import { Result, type option, type result } from "#src/core/monads.ts"
 
 class Pair<T, E> {
     first: T
@@ -35,10 +35,10 @@ export class Argparse {
     #map: Record<string, MapValue>
     #options: CliOption[]
     #args: string[]
-    #programDescription: Option<string>
+    #programDescription: option<string>
 
     constructor(args: string[], cliOptions: CliOption[], argumentOffset = 2) {
-        this.#programDescription = null
+        this.#programDescription = undefined
         this.#options = [
             {
                 name: "help",
@@ -53,7 +53,12 @@ export class Argparse {
             throw new Error("invalid arguments provided")
         }
 
-        this.#scriptName = path.basename(args[argumentOffset - 1])
+        const argValue = args[argumentOffset - 1]
+        if (!argValue) {
+            throw new Error("invalid arguments provided")
+        }
+
+        this.#scriptName = path.basename(argValue)
         this.#map = {}
         this.#args = args
         this.#argumentOffset = argumentOffset
@@ -93,19 +98,21 @@ export class Argparse {
         return this.#map as T
     }
 
-    #parseRawArguments(args: string[]): Result<Record<string, MapValue>> {
+    #parseRawArguments(args: string[]): result<Record<string, MapValue>> {
         const map: Record<string, MapValue> = {}
         for (let i = this.#argumentOffset; i < args.length; i++) {
             const arg = args[i]
+            if (!arg) continue
+
             const parsed = this.#parseSingleArgument(arg)
             if (parsed.isError) {
-                return Results.wrap(parsed, "invalid argument(s)")
+                return Result.wrap(parsed, "invalid argument(s)")
             }
 
             map[parsed.value.first] = parsed.value.second
         }
 
-        return Results.ok(map)
+        return Result.ok(map)
     }
 
     /**
@@ -114,7 +121,7 @@ export class Argparse {
      *  -name=admin
      *  -verbose (inferred to be boolean)
      */
-    #parseSingleArgument(arg: string): Result<Pair<string, MapValue>> {
+    #parseSingleArgument(arg: string): result<Pair<string, MapValue>> {
         if (!arg.startsWith("-")) {
             throw new Error("invalid argument: " + arg)
         }
@@ -125,83 +132,86 @@ export class Argparse {
             const relatedRegisteredOption = this.#options.find((opt) => opt.name === key)
 
             if (!relatedRegisteredOption) {
-                return Results.err("unknown argument: " + key)
+                return Result.err("unknown argument: " + key)
             }
 
             if (relatedRegisteredOption.kind === "boolean") {
-                return Results.ok(new Pair(key, true))
+                return Result.ok(new Pair(key, true))
             }
 
-            return Results.err("missing argument for -" + key)
+            return Result.err("missing argument for -" + key)
         }
 
         // parse value flags.
         const trimmedArg = arg.slice(1)
         const pieces = trimmedArg.split("=")
         if (pieces.length !== 2) {
-            return Results.err("invalid argument: " + arg)
+            return Result.err("invalid argument: " + arg)
         }
 
         const [key, value] = pieces
-        const relatedRegisteredOption = this.#options.find((opt) => opt.name === key)
+        if (!key || !value) {
+            return Result.err("invalid argument: " + arg)
+        }
 
+        const relatedRegisteredOption = this.#options.find((opt) => opt.name === key)
         if (!relatedRegisteredOption) {
-            return Results.err("unknown argument: " + key)
+            return Result.err("unknown argument: " + key)
         }
 
         switch (relatedRegisteredOption.kind) {
             case "boolean":
                 switch (value.toLowerCase()) {
                     case "true":
-                        return Results.ok(new Pair(key, true))
+                        return Result.ok(new Pair(key, true))
 
                     case "false":
-                        return Results.ok(new Pair(key, false))
+                        return Result.ok(new Pair(key, false))
 
                     case "":
-                        return Results.err(`missing value for flag -${key}`)
+                        return Result.err(`missing value for flag -${key}`)
 
                     default:
-                        return Results.err(`unexpected value for boolean flag -${key}: ${value}`)
+                        return Result.err(`unexpected value for boolean flag -${key}: ${value}`)
                 }
 
             case "int":
                 switch (value) {
                     case "":
-                        return Results.err(`missing value for flag -${key}`)
+                        return Result.err(`missing value for flag -${key}`)
 
                     default:
-                        const parsedInt = Results.of(() => parseInt(value))
+                        const parsedInt = Result.of(() => parseInt(value))
                         if (parsedInt.isError) {
-                            return Results.err(
+                            return Result.err(
                                 `invalid decimal value provided for flag -${key}: ${value}`,
                             )
                         }
-                        return Results.ok(new Pair(key, parsedInt.value))
+                        return Result.ok(new Pair(key, parsedInt.value))
                 }
 
             case "float":
                 switch (value) {
                     case "":
-                        return Results.err(`missing value for flag -${key}`)
+                        return Result.err(`missing value for flag -${key}`)
 
                     default:
-                        const parsedFloat = Results.of(() => parseFloat(value))
+                        const parsedFloat = Result.of(() => parseFloat(value))
                         if (parsedFloat.isError) {
-                            return Results.err(
+                            return Result.err(
                                 `invalid integer value provided for flag -${key}: ${value}`,
                             )
                         }
-                        return Results.ok(new Pair(key, parsedFloat.value))
+                        return Result.ok(new Pair(key, parsedFloat.value))
                 }
 
             case "string":
                 switch (value) {
                     case "":
-                        return Results.err(`missing value for flag -${key}`)
+                        return Result.err(`missing value for flag -${key}`)
 
                     default:
-                        return Results.ok(new Pair(key, value))
+                        return Result.ok(new Pair(key, value))
                 }
         }
     }

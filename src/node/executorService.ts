@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
-import { Results, type Option } from "#src/core/monads.ts"
+import { Result, type option } from "#src/core/monads.ts"
 
 type StatusCallback = () => void
 type AsyncCallback<T> = () => Promise<T>
@@ -27,7 +27,7 @@ class Future<T> {
 
     async run(): Promise<T> {
         this.state = { status: "inprogress" }
-        const result = await Results.ofPromise(this.#callback())
+        const result = await Result.ofPromise(this.#callback())
         if (result.isError) {
             this.state = { status: "errored", error: result.error.message }
             throw result.error
@@ -59,7 +59,7 @@ export class ExecutorService<T> {
         this.#emitter = new EventEmitter()
     }
 
-    #getNextFuture(): Option<Future<T>> {
+    #getNextFuture(): option<Future<T>> {
         for (const future of this.#futures) {
             if (future.state.status === "pending") {
                 return future
@@ -67,7 +67,7 @@ export class ExecutorService<T> {
         }
 
         this.#checkDoneStatus()
-        return null
+        return
     }
 
     async #checkDoneStatus() {

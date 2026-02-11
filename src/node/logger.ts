@@ -1,5 +1,5 @@
 import { DateTimeFormatter, Format } from "#src/core/dateTimeFormatter.ts"
-import { Results, type Option, type Result } from "#src/core/monads.ts"
+import { Result, type option, type result } from "#src/core/monads.ts"
 import { StringBuilder } from "#src/core/stringBuilder.ts"
 import { Env } from "./env.ts"
 import { ConsoleWriter, type Writer } from "./writer.ts"
@@ -57,7 +57,7 @@ type LogEntry = {
     timestamp: string
     level: string
     message: string
-    details: Option<Record<string, unknown>>
+    details: option<Record<string, unknown>>
 }
 
 export abstract class AbstractLogger {
@@ -76,20 +76,20 @@ export abstract class AbstractLogger {
         targetLevel: LogLevel,
         message: string,
         details?: Record<string, unknown>,
-    ): Result<LogEntry> {
-        const timestamp = Results.of(() => DateTimeFormatter.format(new Date(), Format.full))
+    ): result<LogEntry> {
+        const timestamp = Result.of(() => DateTimeFormatter.format(new Date(), Format.full))
         if (timestamp.isError) {
-            return Results.err(`failed to get timestamp: ` + timestamp.error)
+            return Result.err(`failed to get timestamp: ` + timestamp.error)
         }
 
         const logEntry: LogEntry = {
             timestamp: timestamp.value,
             level: targetLevel.value,
             message,
-            details: details ?? null,
+            details: details,
         }
 
-        return Results.ok(logEntry)
+        return Result.ok(logEntry)
     }
 
     #log(targetLevel: LogLevel) {
@@ -155,7 +155,7 @@ export class JsonLogger extends AbstractLogger {
 
     printEntry(logEntry: LogEntry): void {
         const payload = { ...logEntry, ...logEntry.details, details: undefined }
-        const encoded = Results.of(() => JSON.stringify(payload))
+        const encoded = Result.of(() => JSON.stringify(payload))
         if (encoded.isError) {
             return this.error("failed to json encode log entry", {
                 error: encoded.error,

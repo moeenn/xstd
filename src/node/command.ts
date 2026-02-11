@@ -1,4 +1,4 @@
-import { Results, type Option } from "#src/core/monads.ts"
+import { Result, type option } from "#src/core/monads.ts"
 import { spawn } from "node:child_process"
 
 type RunOptions = {
@@ -12,7 +12,7 @@ const defaultRunOptions: RunOptions = {
 export class Command {
     static async run(
         command: string,
-        args: Option<string[]> = null,
+        args: option<string[]> = undefined,
         options: RunOptions = defaultRunOptions,
     ): Promise<number> {
         const p = spawn(command, args ?? [])
@@ -31,7 +31,7 @@ export class Command {
     }
 
     static async isAvailable(command: string): Promise<boolean> {
-        const code = await Results.ofPromise(Command.run("which", [command], { silenced: true }))
+        const code = await Result.ofPromise(Command.run("which", [command], { silenced: true }))
 
         if (code.isError) {
             return false

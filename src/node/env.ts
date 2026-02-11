@@ -1,4 +1,4 @@
-import { Results } from "#src/core/monads.ts"
+import { Result } from "#src/core/monads.ts"
 
 export class Env {
     #args: Record<string, string>
@@ -29,7 +29,7 @@ export class Env {
     readNumber(name: string, fallback?: number): number {
         const rawValue = this.readString(name, String(fallback))
 
-        const parsedValue = Results.of(() => parseFloat(rawValue))
+        const parsedValue = Result.of(() => parseFloat(rawValue))
         if (parsedValue.isError) {
             throw new Error(`environment variable ${name} is not a valid number`)
         }

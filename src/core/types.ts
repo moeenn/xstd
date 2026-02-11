@@ -1,4 +1,4 @@
-import { Results, type Result } from "./monads.ts"
+import { Result, type result } from "./monads.ts"
 
 type KnownType =
     | "String"
@@ -33,6 +33,7 @@ type JsObject = {
     }
 }
 
+// TODO: consider if required.
 function isType(input: JsObject, targetType: KnownType): boolean {
     const typeName = input.constructor.name
     switch (typeName) {
@@ -45,15 +46,15 @@ function isType(input: JsObject, targetType: KnownType): boolean {
 }
 
 // TODO: consider if required.
-function getType(input: JsObject): Result<KnownType> {
+function getType(input: JsObject): result<KnownType> {
     const typeName = input.constructor.name
     for (const knownType of Object.values(Type)) {
         if (typeName === knownType) {
-            return Results.ok(knownType)
+            return Result.ok(knownType)
         }
     }
 
-    return Results.err("failed to find type")
+    return Result.err("failed to find type")
 }
 
 export const Types = {

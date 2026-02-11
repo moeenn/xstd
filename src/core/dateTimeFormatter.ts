@@ -1,5 +1,5 @@
 import { datePlaceholders, type DatePlaceholder } from "./datePlaceholder.ts"
-import { type Option } from "./monads.ts"
+import { type option } from "./monads.ts"
 
 export const Format = {
     full: "%Y-%m-%d %H:%M",
@@ -20,14 +20,14 @@ export class DateTimeFormatter {
         return new Set(matches)
     }
 
-    static findPlaceholder(placeholder: string): Option<DatePlaceholder> {
+    static findPlaceholder(placeholder: string): option<DatePlaceholder> {
         for (const p of datePlaceholders) {
             if (p.placeholders.includes(placeholder)) {
                 return p
             }
         }
 
-        return null
+        return
     }
 
     static format(date: Date, format: DateFormat): string {
