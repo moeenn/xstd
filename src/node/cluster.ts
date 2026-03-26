@@ -12,7 +12,7 @@ type ClusterArgs = {
 
 export class Cluster {
     #logger: option<AbstractLogger>
-    #workerCount: ClusterWorkerCount
+    #workerCount: ClusterWorkerCount = "MAX"
 
     constructor(args: ClusterArgs) {
         this.#logger = args.logger

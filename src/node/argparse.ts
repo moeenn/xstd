@@ -75,7 +75,7 @@ export class Argparse {
     parse<T extends Record<string, MapValue> | object>(): T {
         const map = this.#parseRawArguments(this.#args)
         if (map.isError) {
-            throw map
+            throw new Error(map.error.message)
         }
 
         this.#map = map.value
